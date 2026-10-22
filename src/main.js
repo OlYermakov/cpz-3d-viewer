@@ -22,7 +22,7 @@ const layerLabel = (id) => { const n = objName(id); return n ? `${id} · ${n}` :
 
 const state = {
   model: null,
-  showLines: true, showPoints: true, showLabels: false, showHeights: false, showTexts: true,
+  showLines: true, showPoints: true, showLabels: false, showHeights: false, showTexts: true, showLtypes: true,
   showGrid: true, show2D: true, showDrop: false,
   colorMode: 'layer', zScale: 1, lineWidth: 2, pointSize: 6,
   theme: 'dark', ortho: false, measure: false,
@@ -204,8 +204,48 @@ function disposeGroup(g) {
 }
 const sharedDropMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.35 });
 
+// Власний колір об'єкта DXF з тією ж корекцією під фон, що й колір шару (кешується)
+const entityColors = new Map();
+function entityColor(rgb) {
+  let c = entityColors.get(rgb);
+  if (!c) { c = displayColor(rgb); entityColors.set(rgb, c); }
+  return c;
+}
+
+// Штрихування полілінії за шаблоном типу лінії DXF (довжини в одиницях креслення:
+// >0 штрих, <0 проміжок, 0 точка). Шаблон безперервний уздовж усієї полілінії, як у CAD.
+// Повертає false, якщо шаблон надто дрібний для лінії — тоді вона малюється суцільною.
+function pushDashed(line, own, vcolor, seg) {
+  const pat = line.dash;
+  const period = pat.reduce((s, v) => s + Math.abs(v), 0);
+  if (!(period > 1e-9)) return false;
+  const P = line.pts.map((p) => [p.lx, p.ly, p.lz]);
+  let total = 0;
+  for (let k = 1; k < P.length; k++) total += Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1], P[k][2] - P[k - 1][2]);
+  if (total / period > 2000 || total < period * 0.5) return false;
+  const dot = period * 0.02;
+  const lenOf = (i) => (pat[i] === 0 ? dot : Math.abs(pat[i]));
+  let idx = 0, left = lenOf(0);
+  for (let k = 1; k < P.length; k++) {
+    const a = P[k - 1], b = P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    if (L === 0) continue;
+    const ca = vcolor(line.pts[k - 1], own), cb = vcolor(line.pts[k], own);
+    const at = (t) => [a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L, a[2] + (b[2] - a[2]) * t / L];
+    const col = (t) => (ca === cb ? ca : ca.clone().lerp(cb, t / L));
+    let t = 0;
+    while (t < L - 1e-12) {
+      const step = Math.min(left, L - t);
+      if (pat[idx] >= 0) seg(at(t), at(t + step), col(t), col(t + step));
+      t += step; left -= step;
+      if (left <= 1e-12) { idx = (idx + 1) % pat.length; left = lenOf(idx); }
+    }
+  }
+  return true;
+}
+
 function rebuildScene() {
   disposeGroup(modelGroup);
+  entityColors.clear(); // корекція кольорів залежить від теми
   lineMaterials.length = 0;
   const M = state.model;
   if (!M) return;
@@ -228,12 +268,15 @@ function rebuildScene() {
     modelGroup.add(g);
     const baseColor = displayColor(L.color);
     L.css = '#' + baseColor.getHexString(); // колір текстів шару на оверлеї
-    const vcolor = (p) => (p.noZ ? gray : heightColor(p.z));
+    // Колір вершини: за висотою, або власний колір об'єкта DXF, або колір шару
+    const ownColor = (rgb) => (rgb == null ? baseColor : entityColor(rgb));
+    const vcolor = (p, own) => (heightMode ? (p.noZ ? gray : heightColor(p.z)) : own);
 
+    // Кольори — у вершинах (кожен об'єкт DXF може мати свій колір), тому колір матеріалу білий
     const lineMat = new LineMaterial({
-      color: heightMode ? 0xffffff : baseColor,
+      color: 0xffffff,
       linewidth: state.lineWidth * Math.max(1, L.width),
-      vertexColors: heightMode,
+      vertexColors: true,
       resolution,
     });
     lineMaterials.push(lineMat);
@@ -244,27 +287,30 @@ function rebuildScene() {
       // точки дуг/кіл/граней (nopick) — лише геометрія
       if (!p.vertex) {
         ptPos.push(p.lx, p.ly, p.lz);
-        if (heightMode) { const c = vcolor(p); ptCol.push(c.r, c.g, c.b); }
+        const c = vcolor(p, ownColor(p.color));
+        ptCol.push(c.r, c.g, c.b);
       }
       if (!p.nopick) addPick(p, L, line);
     };
 
     // Усі лінії шару — одним об'єктом (відрізками): тисячі полілiній DXF без втрати швидкості
     const segPos = [], segCol = [];
+    const seg = (a, b, ca, cb) => { segPos.push(a[0], a[1], a[2], b[0], b[1], b[2]); segCol.push(ca.r, ca.g, ca.b, cb.r, cb.g, cb.b); };
     for (const line of L.lines) {
       if (line.is2D && !state.show2D) continue;
-      line.pts.forEach((p, k) => {
-        pushPt(p, line);
-        if (k === 0 || !state.showLines) return;
-        const a = line.pts[k - 1];
-        segPos.push(a.lx, a.ly, a.lz, p.lx, p.ly, p.lz);
-        if (heightMode) { const ca = vcolor(a), cb = vcolor(p); segCol.push(ca.r, ca.g, ca.b, cb.r, cb.g, cb.b); }
-      });
+      line.pts.forEach((p) => pushPt(p, line));
+      if (!state.showLines || line.pts.length < 2) continue;
+      const own = ownColor(line.color);
+      if (state.showLtypes && line.dash && pushDashed(line, own, vcolor, seg)) continue;
+      for (let k = 1; k < line.pts.length; k++) {
+        const a = line.pts[k - 1], b = line.pts[k];
+        seg([a.lx, a.ly, a.lz], [b.lx, b.ly, b.lz], vcolor(a, own), vcolor(b, own));
+      }
     }
     if (segPos.length) {
       const geo = new LineSegmentsGeometry();
       geo.setPositions(segPos);
-      if (heightMode) geo.setColors(segCol);
+      geo.setColors(segCol);
       g.add(new LineSegments2(geo, lineMat));
     }
     for (const p of L.points) {
@@ -275,10 +321,10 @@ function rebuildScene() {
     if (ptPos.length && state.showPoints) {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(ptPos, 3));
-      if (heightMode) geo.setAttribute('color', new THREE.Float32BufferAttribute(ptCol, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(ptCol, 3));
       const mat = new THREE.PointsMaterial({
         size: state.pointSize, sizeAttenuation: false, map: dotTexture, alphaTest: 0.5,
-        color: heightMode ? 0xffffff : baseColor, vertexColors: heightMode,
+        color: 0xffffff, vertexColors: true,
       });
       g.add(new THREE.Points(geo, mat));
     }
@@ -471,7 +517,7 @@ function drawOverlay() {
         }
         ctx.font = `${Math.round(px)}px "Segoe UI", system-ui, sans-serif`;
         const w = ctx.measureText(tx.text).width + 4;
-        place(tx.text, s.x - 2, s.y - px, w, px + 2, L.css);
+        place(tx.text, s.x - 2, s.y - px, w, px + 2, tx.color == null ? L.css : '#' + entityColor(tx.color).getHexString());
         if (++drawn > 3000) break;
       }
     }
@@ -866,6 +912,7 @@ bindCheck('optPoints', 'showPoints', 'scene');
 bindCheck('optLabels', 'showLabels');
 bindCheck('optHeights', 'showHeights');
 bindCheck('optTexts', 'showTexts');
+bindCheck('optLtypes', 'showLtypes', 'scene');
 bindCheck('optGrid', 'showGrid', 'grid');
 bindCheck('opt2D', 'show2D', 'scene');
 bindCheck('optDrop', 'showDrop', 'scene');

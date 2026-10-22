@@ -59,6 +59,8 @@ function tokenize(text) {
       continue;
     }
     if (code === 2 && !sec && !cur) { sec = val.trim(); sections[sec] = []; continue; }
+    // HEADER — пари «змінна (9) / значення» без сутностей
+    if (sec === 'HEADER') { sections.HEADER.push([code, val.trim()]); continue; }
     // Числа в DXF часто вирівняні пробілами ("     1"); текст (1, 3) не обрізаємо зліва
     if (cur) cur.g.push([code, code === 1 || code === 3 ? val.trimEnd() : val.trim()]);
   }
@@ -131,6 +133,22 @@ export function parseDXF(text) {
   const S = tokenize(text);
   if (!S.ENTITIES) throw new Error(t('e.noData'));
 
+  // Глобальний масштаб типів ліній ($LTSCALE)
+  const hdr = S.HEADER ?? [];
+  let ltScale = 1;
+  for (let k = 0; k < hdr.length; k++) {
+    if (hdr[k][0] === 9 && hdr[k][1] === '$LTSCALE') { const v = hdr.slice(k + 1, k + 4).find((p) => p[0] === 40); if (v) ltScale = num(v[1]) || 1; }
+  }
+
+  // Типи ліній: шаблон — довжини елементів (49): >0 штрих, <0 проміжок, 0 точка
+  const ltypes = new Map();
+  for (const e of S.TABLES ?? []) {
+    if (e.type !== 'LTYPE') continue;
+    const name = get(e, 2, '').trim().toUpperCase();
+    const pattern = e.g.filter(([c]) => c === 49).map(([, v]) => num(v));
+    if (name && pattern.length >= 2 && pattern.some((v) => v < 0)) ltypes.set(name, pattern);
+  }
+
   // Шари
   const layers = new Map();
   for (const e of S.TABLES ?? []) {
@@ -144,8 +162,31 @@ export function parseDXF(text) {
       color: tc !== undefined ? parseInt(tc, 10) & 0xffffff : aciToRgb(aci),
       visible: aci >= 0 && !(flags & 1),
       width: lw >= 50 ? 2 : 1,
+      ltype: get(e, 6, '').trim().toUpperCase(),
     });
   }
+
+  // Колір і тип лінії сутності з урахуванням «за шаром» (256 / BYLAYER) і «за блоком» (0 / BYBLOCK).
+  // color: RGB або null (= колір шару); lt: назва типу лінії ('' — суцільна).
+  function styleOf(e, layer, parent) {
+    let color = null;
+    const tc = get(e, 420), aci = get(e, 62);
+    if (tc !== undefined) color = parseInt(tc, 10) & 0xffffff;
+    else if (aci !== undefined) {
+      const a = parseInt(aci, 10);
+      if (a === 0) color = parent.color;
+      else if (a > 0 && a < 256) color = aciToRgb(a);
+    }
+    let lt = (get(e, 6, 'BYLAYER') || 'BYLAYER').trim().toUpperCase();
+    if (lt === 'BYBLOCK') lt = parent.lt;
+    else if (lt === 'BYLAYER') lt = layers.get(layer)?.ltype ?? '';
+    return { color, lt, ltk: getN(e, 48, 1) || 1 };
+  }
+  // Шаблон штрихів у одиницях креслення: $LTSCALE × масштаб сутності × масштаб вставки блоку
+  const dashOf = (st, scale) => {
+    const pat = st.lt && st.lt !== 'CONTINUOUS' ? ltypes.get(st.lt) : null;
+    return pat ? pat.map((v) => v * ltScale * st.ltk * scale) : null;
+  };
 
   // Блоки: BLOCK … ENDBLK
   const blocks = new Map();
@@ -159,17 +200,20 @@ export function parseDXF(text) {
   const out = { points: [], lines: [], texts: [] };
   let nLine = 0;
 
-  const vtx = (p, layer, extra) => ({ name: '', code: null, x: p[0], y: p[1], z: p[2], layer, attrs: [], ...extra });
+  // Стиль поточної сутності (колір / штрихи) — встановлюється перед обробкою кожної сутності
+  let sty = { color: null, dash: null };
+  const vtx = (p, layer, extra) => ({ name: '', code: null, x: p[0], y: p[1], z: p[2], layer, attrs: [], color: sty.color, ...extra });
   const addLine = (type, handle, layer, pts, { closed = false, pick = true } = {}) => {
     if (pts.length < 2) return;
     const v = pts.map((p) => vtx(p, layer, pick ? { vertex: true } : { vertex: true, nopick: true }));
     if (closed) v.push({ ...v[0] });
-    out.lines.push({ name: `${type} ${handle || ++nLine}`, layer, attrs: [], pts: v, closed });
+    out.lines.push({ name: `${type} ${handle || ++nLine}`, layer, attrs: [], pts: v, closed, color: sty.color, dash: sty.dash });
   };
-  const addText = (s, p, layer, h) => { s = decodeUnicode(s).trim(); if (s) out.texts.push({ text: s, x: p[0], y: p[1], z: p[2], layer, h }); };
+  const addText = (s, p, layer, h) => { s = decodeUnicode(s).trim(); if (s) out.texts.push({ text: s, x: p[0], y: p[1], z: p[2], layer, h, color: sty.color }); };
 
-  // Обхід списку сутностей (головний або вміст блоку) з перетворенням координат
-  function walk(ents, T, parentLayer, scale, depth) {
+  // Обхід списку сутностей (головний або вміст блоку) з перетворенням координат;
+  // parent — колір і тип лінії вставки блоку для «за блоком»
+  function walk(ents, T, parentLayer, scale, depth, parent = { color: null, lt: '' }) {
     for (let i = 0; i < ents.length; i++) {
       const e = ents[i];
       if (get(e, 67) === '1' || get(e, 60) === '1') {
@@ -181,6 +225,8 @@ export function parseDXF(text) {
       if (layer === '0' && parentLayer) layer = parentLayer;
       const h = get(e, 5, '').trim();
       const P = (c) => T(pt(e, c));
+      const st = styleOf(e, layer, parent);
+      sty = { color: st.color, dash: dashOf(st, scale) };
 
       switch (e.type) {
         case 'LINE':
@@ -313,8 +359,12 @@ export function parseDXF(text) {
             while (i + 1 < ents.length && ents[i + 1].type === 'ATTRIB') attribs.push(ents[++i]);
             if (i + 1 < ents.length && ents[i + 1].type === 'SEQEND') i++;
           }
+          // Для вмісту блоку «за блоком» = колір/тип лінії цієї вставки (а «за шаром» вставки — колір її шару)
+          const own = { color: st.color ?? layers.get(layer)?.color ?? null, lt: st.lt };
+          const mine = sty;
           if (e.type === 'DIMENSION') {
-            if (b && depth < 10) walk(b.ents, T, layer, scale, depth + 1);
+            if (b && depth < 10) walk(b.ents, T, layer, scale, depth + 1, own);
+            sty = mine;
             break;
           }
           const pos = pt(e), sx = getN(e, 41, 1), sy = getN(e, 42, 1), sz = getN(e, 43, 1), rot = getN(e, 50);
@@ -322,8 +372,9 @@ export function parseDXF(text) {
           const dc = getN(e, 44), dr = getN(e, 45);
           for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
             const off = [pos[0] + c * dc, pos[1] + r * dr, pos[2]];
-            if (b && depth < 10) walk(b.ents, insertTransform(T, b.base, off, sx, sy, sz, rot), layer, scale * Math.abs(sx), depth + 1);
+            if (b && depth < 10) walk(b.ents, insertTransform(T, b.base, off, sx, sy, sz, rot), layer, scale * Math.abs(sx), depth + 1, own);
           }
+          sty = mine; // відновити стиль вставки після обходу вмісту блоку
           // Точка вставки — як точка зйомки; назва з першого непорожнього атрибута
           const vals = attribs.filter((a) => !(getN(a, 70) & 1)).map((a) => ({ tag: get(a, 2, '').trim(), val: decodeUnicode(get(a, 1, '')).trim() })).filter((a) => a.val);
           if (depth === 0) {
@@ -335,8 +386,11 @@ export function parseDXF(text) {
           for (const a of attribs) {
             if (getN(a, 70) & 1) continue;
             const aligned = getN(a, 72) || getN(a, 74);
-            addText(get(a, 1, ''), T(aligned ? pt(a, 11) : pt(a, 10)), (get(a, 8, layer) || layer).trim(), getN(a, 40, 1) * scale);
+            const aLayer = (get(a, 8, layer) || layer).trim();
+            sty = { color: styleOf(a, aLayer, own).color, dash: null };
+            addText(get(a, 1, ''), T(aligned ? pt(a, 11) : pt(a, 10)), aLayer, getN(a, 40, 1) * scale);
           }
+          sty = mine;
           break;
         }
 
