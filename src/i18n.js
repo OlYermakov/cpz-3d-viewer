@@ -2,6 +2,8 @@
 // У HTML: data-i18n="ключ" (текст), data-i18n-html (розмітка), data-i18n-title (підказка).
 // У JS: t('ключ', { змінна: значення }) — підставляє {змінна}.
 
+import about from './about.js';
+
 const dict = {
   uk: {
     'open': 'Відкрити файл…',
@@ -282,6 +284,11 @@ const dict = {
     'fi.format': 'Format',
   },
 };
+
+// Розділ «Про застосунок» — окремий файл через обсяг тексту
+for (const [l, a] of Object.entries(about)) {
+  Object.assign(dict[l], { 'about.title': a.title, 'about.version': a.version, 'about.link': a.link, 'about.html': a.html });
+}
 
 export const LANGS = ['uk', 'de', 'en'];
 const STORAGE_KEY = 'cpz-viewer-lang';

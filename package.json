@@ -1,6 +1,6 @@
 {
   "name": "cpz-3d-viewer",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "3D-переглядач креслень CAPLAN (Cremer) у форматі CPZ",
   "private": true,
   "type": "module",

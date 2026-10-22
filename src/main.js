@@ -745,6 +745,30 @@ const setSheet = (open) => document.body.classList.toggle('sheet-open', open);
 $('btnMenu').addEventListener('click', () => setSheet(!document.body.classList.contains('sheet-open')));
 $('btnCloseSheet').addEventListener('click', () => setSheet(false));
 $('scrim').addEventListener('click', () => setSheet(false));
+
+// Вікно «Про застосунок та інструкція» — по кліку на іконку в панелі
+const aboutEl = $('about');
+let aboutReturnFocus = null;
+function fillAbout() {
+  $('aboutVer').textContent = `CPZ 3D Viewer · ${t('about.version')} ${__APP_VERSION__} · ${__BUILD_DATE__}`;
+  $('aboutBody').innerHTML = t('about.html');
+}
+function setAbout(open) {
+  if (open === !aboutEl.hidden) return;
+  aboutEl.hidden = !open;
+  if (open) {
+    aboutReturnFocus = document.activeElement;
+    fillAbout();
+    $('aboutBody').scrollTop = 0;
+    $('btnAboutClose').focus();
+  } else {
+    aboutReturnFocus?.focus?.();
+  }
+}
+$('btnAbout').addEventListener('click', () => setAbout(true));
+$('btnAbout2').addEventListener('click', () => setAbout(true));
+$('btnAboutClose').addEventListener('click', () => setAbout(false));
+aboutEl.addEventListener('click', (e) => { if (e.target === aboutEl) setAbout(false); });
 $('fileInput').addEventListener('change', (e) => { openFileList(e.target.files); e.target.value = ''; });
 
 let dragDepth = 0;
@@ -840,6 +864,8 @@ $('optPS').addEventListener('input', (e) => {
 function toggleCheck(id) { const el = $(id); el.checked = !el.checked; el.dispatchEvent(new Event('change')); }
 
 window.addEventListener('keydown', (e) => {
+  // Поки відкрите вікно «Про застосунок», клавіші не керують сценою; Esc закриває вікно
+  if (!aboutEl.hidden) { if (e.key === 'Escape') { setAbout(false); e.preventDefault(); } return; }
   if (e.target.closest('input, select, textarea') && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
   if (!state.model || e.ctrlKey || e.altKey || e.metaKey) return;
   const k = e.key.toLowerCase();
@@ -900,6 +926,7 @@ function applyLang(l) {
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === getLang());
   applyTheme(); // текст кнопки теми
   if (state.model) { fillFileInfo(); fillLayers(); updateInfo(); }
+  if (!aboutEl.hidden) fillAbout();
   updateStatus();
   requestRender(); // підпис сітки на полотні
 }
