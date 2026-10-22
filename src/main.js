@@ -75,7 +75,14 @@ const dotTexture = (() => {
   return t;
 })();
 
+// Відступ «чубчика» iPhone зверху (env(safe-area-inset-top)) — для розміщення компаса на полотні
+const safeProbe = document.createElement('div');
+safeProbe.style.cssText = 'position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top)';
+document.body.appendChild(safeProbe);
+let safeTop = 0;
+
 function resize() {
+  safeTop = parseFloat(getComputedStyle(safeProbe).paddingTop) || 0;
   vw = viewport.clientWidth; vh = viewport.clientHeight;
   renderer.setSize(vw, vh, false);
   const dpr = window.devicePixelRatio;
@@ -84,6 +91,7 @@ function resize() {
   for (const m of lineMaterials) m.resolution.copy(resolution);
   persp.aspect = vw / vh; persp.updateProjectionMatrix();
   updateOrthoFrustum();
+  if (state.model) updateStatus(); // текст рядка стану залежить від ширини (телефон / ПК)
   requestRender();
 }
 function updateOrthoFrustum() {
@@ -400,7 +408,7 @@ function setOrtho(on) {
   camera.lookAt(t);
   controls.object = camera;
   controls.update();
-  $('btnOrtho').classList.toggle('on', on);
+  for (const id of ['btnOrtho', 'mOrtho']) $(id).classList.toggle('on', on);
   requestRender();
 }
 
@@ -532,10 +540,10 @@ function pill(x, y, w, h, dark) {
 }
 
 function drawCompass(dark) {
-  // На телефоні — компактніше й вище, над рядком стану
+  // На телефоні — компактно у верхньому правому куті (низ зайнятий панеллю інструментів)
   const small = isNarrow();
-  const len = small ? 20 : 28;
-  const cx = small ? 44 : 56, cy = vh - (small ? 118 : 84);
+  const len = small ? 18 : 28;
+  const cx = small ? vw - 42 : 56, cy = small ? safeTop + 98 : vh - 84;
   const m = camera.matrixWorldInverse;
   const axes = [
     { v: new THREE.Vector3(1, 0, 0), c: dark ? '#ff8a96' : '#d9475a', t: 'E' },
@@ -651,7 +659,8 @@ function updateStatus() {
   } else if (state.measure) {
     $('status').textContent = a ? `A: ${ptName(a)} — ${act('m.second')}` : act('m.two');
   } else if (state.model) {
-    const base = `${state.model.name}  ·  ${pickPts.length} ${t('st.points')}  ·  ${state.model.lines.length} ${t('st.lines')}`;
+    // На телефоні назва файлу вже є у верхній панелі
+    const base = `${isNarrow() ? '' : `${state.model.name}  ·  `}${pickPts.length} ${t('st.points')}  ·  ${state.model.lines.length} ${t('st.lines')}`;
     $('status').textContent = `${base}  ·  ${t(isTouch ? 'st.tap' : 'st.mouse')}`;
   }
 }
@@ -717,6 +726,7 @@ async function openInputs(inputs) {
     viewport.classList.add('loaded');
     for (const id of ['secFile', 'secLayers', 'secView']) $(id).hidden = false;
     document.title = `${state.model.name} — CPZ 3D Viewer`;
+    $('mTitle').textContent = state.model.name;
     fillFileInfo();
     fillLayers();
     rebuildScene();
@@ -821,7 +831,7 @@ canvas.addEventListener('pointerleave', () => { if (state.hover) { state.hover =
 function setMeasure(on) {
   state.measure = on;
   state.measurePts = [];
-  $('btnMeasure').classList.toggle('on', on);
+  for (const id of ['btnMeasure', 'mMeasure']) $(id).classList.toggle('on', on);
   updateInfo(); updateStatus(); requestRender();
 }
 
@@ -833,6 +843,18 @@ $('btnAllOn').addEventListener('click', () => { for (const L of state.model.laye
 $('btnAllOff').addEventListener('click', () => { for (const L of state.model.layerList) setLayerVisible(L, false); syncLayerChecks(); });
 $('btnTheme').addEventListener('click', () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; applyTheme(); if (state.model) fillLayers(); });
 $('btnShot').addEventListener('click', screenshot);
+
+// Телефон: нижня панель інструментів і меню видів
+const viewMenu = $('viewMenu');
+const setViewMenu = (open) => { viewMenu.hidden = !open; $('mView').classList.toggle('on', open); };
+$('mView').addEventListener('click', () => setViewMenu(viewMenu.hidden));
+viewMenu.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setViewMenu(false)));
+$('mFit').addEventListener('click', () => setView('fit'));
+$('mOrtho').addEventListener('click', () => setOrtho(!state.ortho));
+$('mMeasure').addEventListener('click', () => setMeasure(!state.measure));
+$('mShot').addEventListener('click', screenshot);
+$('mTitle').addEventListener('click', () => setSheet(true));
+canvas.addEventListener('pointerdown', () => { if (!viewMenu.hidden) setViewMenu(false); });
 
 const bindCheck = (id, key, rebuild) => $(id).addEventListener('change', (e) => {
   state[key] = e.target.checked;

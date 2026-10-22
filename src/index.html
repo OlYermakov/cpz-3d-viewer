@@ -34,6 +34,8 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; color: var(--text); overflow: hidden;
     font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+  /* Тло й під панелями браузера (iOS Safari показує фон html за своєю нижньою панеллю) */
+  html { background: var(--bg0); }
   body {
     background:
       radial-gradient(900px 620px at 72% 18%, var(--glow), transparent 65%),
@@ -184,14 +186,15 @@
   @media (max-width: 760px) {
     .only-mobile { display: inline-flex !important; }
     .only-desktop { display: none !important; }
-    html, body { height: 100dvh; }
     #app { padding: 0; gap: 0; }
     #viewport { position: fixed; inset: 0; border-radius: 0; border: none; }
 
+    /* Закрита панель повністю схована (visibility), щоб на iOS її край не визирав знизу */
     aside { position: fixed; z-index: 30; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
       width: auto; min-width: 0; max-height: 74dvh; border-radius: 22px;
-      transform: translateY(calc(100% + 24px)); transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
-    body.sheet-open aside { transform: none; }
+      transform: translateY(calc(100% + 40px)); visibility: hidden;
+      transition: transform .28s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .28s; }
+    body.sheet-open aside { transform: none; visibility: visible; transition: transform .28s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
     aside header { padding: 8px 16px 12px; position: relative; }
     aside header::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px;
       background: var(--edge-hi); margin: 0 auto 10px; }
@@ -211,16 +214,32 @@
     .opt select, button { min-height: 34px; }
     button.mini { min-height: 28px; padding: 2px 12px; font-size: 12px; }
 
-    #toolbar { top: calc(8px + env(safe-area-inset-top)); left: 8px; right: 8px; flex-wrap: nowrap; gap: 6px;
-      overflow-x: auto; scrollbar-width: none; padding-bottom: 6px; }
-    #toolbar::-webkit-scrollbar { display: none; }
-    #toolbar .grp { flex: none; padding: 3px; }
-    #toolbar .glass { box-shadow: inset 0 1px 0 rgba(170, 230, 255, .14); } /* тінь обрізалась би прокручуваним контейнером */
-    #toolbar .grp button { padding: 8px 11px; min-height: 36px; }
-    #btnMenu { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; align-items: center; justify-content: center; font-size: 18px; }
+    /* Вгорі — лише меню й назва файлу; інструменти — на нижній панелі під пальцем */
+    #toolbar { top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 10px; flex-wrap: nowrap; gap: 8px; }
+    #toolbar .grp { display: none; }
+    #btnMenu { flex: none; width: 46px; height: 46px; padding: 0; border-radius: 50%; align-items: center; justify-content: center; font-size: 19px; }
+    #mTitle { min-width: 0; max-width: calc(100% - 120px); height: 46px; padding: 0 16px; border-radius: 999px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block !important; text-align: left; }
+    #viewport:not(.loaded) #mTitle { display: none !important; }
 
-    #status { left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); transform: none; max-width: none;
-      white-space: normal; text-align: center; font-size: 12px; padding: 8px 14px; border-radius: 16px; }
+    #mobilebar { position: absolute; z-index: 5; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
+      display: flex !important; gap: 2px; padding: 5px; border-radius: 24px; }
+    #viewport:not(.loaded) #mobilebar { display: none !important; }
+    #mobilebar button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      padding: 7px 2px 6px; min-height: 56px; border: 1px solid transparent; border-radius: 18px; background: transparent;
+      font-size: 11px; line-height: 1.1; color: var(--text); }
+    #mobilebar button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    #mobilebar button:active { background: var(--hover); }
+    #mobilebar button.on { color: #fff; border-color: rgba(160, 230, 255, .5);
+      background: linear-gradient(135deg, #2cc2f2, var(--accent-deep)); box-shadow: 0 0 16px rgba(44, 194, 242, .45); }
+    #viewMenu { position: absolute; z-index: 6; left: 10px; bottom: calc(84px + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; padding: 6px; border-radius: 20px; min-width: 170px; }
+    #viewMenu[hidden] { display: none; }
+    #viewMenu button { border: none; background: transparent; text-align: left; padding: 12px 16px; border-radius: 14px; font-size: 15px; }
+    #viewMenu button:active { background: var(--hover); }
+
+    #status { left: 10px; right: 10px; bottom: calc(80px + env(safe-area-inset-bottom)); transform: none; max-width: none;
+      white-space: normal; text-align: center; font-size: 12px; padding: 7px 14px; border-radius: 16px; }
     #drop .box { padding: 10px 20px 60px; }
     .modal { padding: 0; }
     .modal-card { width: 100%; height: 100dvh; max-height: none; border-radius: 0; border: none; }
@@ -334,6 +353,7 @@
     </div></div>
     <div id="toolbar">
       <button class="glass only-mobile" id="btnMenu" data-i18n-title="menu">☰</button>
+      <button class="glass only-mobile" id="mTitle" data-i18n-title="menu"></button>
       <div class="grp glass">
         <button data-view="top" data-i18n="view.top" data-i18n-title="view.top.title"></button>
         <button data-view="front" data-i18n="view.front" data-i18n-title="view.front.title"></button>
@@ -348,6 +368,20 @@
       </div>
     </div>
     <div id="status" class="glass"></div>
+    <!-- Телефон: інструменти внизу, під пальцем -->
+    <div id="viewMenu" class="glass" hidden>
+      <button data-view="top" data-i18n="view.top"></button>
+      <button data-view="front" data-i18n="view.front"></button>
+      <button data-view="side" data-i18n="view.side"></button>
+      <button data-view="iso" data-i18n="view.iso"></button>
+    </div>
+    <nav id="mobilebar" class="glass only-mobile">
+      <button id="mView"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span data-i18n="mb.view"></span></button>
+      <button id="mFit"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span data-i18n="mb.fit"></span></button>
+      <button id="mOrtho"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16M12 4v16"/></svg><span data-i18n="ortho"></span></button>
+      <button id="mMeasure"><svg viewBox="0 0 24 24"><path d="M3.5 16.5l13-13 4 4-13 13z"/><path d="M7.5 12.5l2 2M10.5 9.5l2 2M13.5 6.5l2 2"/></svg><span data-i18n="measure"></span></button>
+      <button id="mShot"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>PNG</span></button>
+    </nav>
   </main>
   <div id="scrim"></div>
   <div id="about" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
