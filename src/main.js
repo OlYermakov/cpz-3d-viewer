@@ -1005,19 +1005,30 @@ function toggleCheck(id) { const el = $(id); el.checked = !el.checked; el.dispat
 window.addEventListener('keydown', (e) => {
   // Поки відкрите вікно «Про застосунок», клавіші не керують сценою; Esc закриває вікно
   if (!aboutEl.hidden) { if (e.key === 'Escape') { setAbout(false); e.preventDefault(); } return; }
-  if (e.target.closest('input, select, textarea') && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
+  if (e.target.closest?.('input, select, textarea') && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
   if (!state.model || e.ctrlKey || e.altKey || e.metaKey) return;
-  const k = e.key.toLowerCase();
-  const map = { f: 'fit', t: 'top', 1: 'top', 2: 'front', 3: 'side', 4: 'iso' };
+  // За фізичною клавішею (e.code), а не символом: з українською розкладкою O дає «щ», F — «а» тощо
+  const k = e.key === 'Escape' ? 'Escape' : e.code.replace(/^(Key|Digit|Numpad)/, '');
+  const map = { F: 'fit', T: 'top', 1: 'top', 2: 'front', 3: 'side', 4: 'iso' };
   if (map[k]) setView(map[k]);
-  else if (k === 'o') setOrtho(!state.ortho);
-  else if (k === 'm') setMeasure(!state.measure);
-  else if (k === 'n') toggleCheck('optLabels');
-  else if (k === 'h') toggleCheck('optHeights');
-  else if (k === 'escape') { if (state.measure) setMeasure(false); state.selected = null; updateInfo(); updateStatus(); requestRender(); }
+  else if (k === 'O') { setOrtho(!state.ortho); showToast(t(state.ortho ? 'toast.orthoOn' : 'toast.orthoOff')); }
+  else if (k === 'M') setMeasure(!state.measure);
+  else if (k === 'N') toggleCheck('optLabels');
+  else if (k === 'H') toggleCheck('optHeights');
+  else if (k === 'Escape') { if (state.measure) setMeasure(false); state.selected = null; updateInfo(); updateStatus(); requestRender(); }
   else return;
   e.preventDefault();
 });
+
+// Коротке повідомлення поверх сцени (напр., про перемикання перспективи клавішею O)
+let toastTimer = 0;
+function showToast(text) {
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
 
 function screenshot() {
   renderer.render(scene, camera);
