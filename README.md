@@ -47,6 +47,13 @@ npm run watch    # перезбірка при змінах
   назви шарів беруться з поля «Bedeutung»
 - `src/objtypes-i18n.js` — переклади назв Objektart українською та англійською
 
+### Іконка
+
+- `icons/icon.svg` — основна іконка (аркуш креслення + 3D-полілінія), `icons/favicon.svg` — спрощена для 16–48 px
+- `icons/concepts/` — альтернативні концепти (A «Віяло», C «Скляний куб»)
+- `npm run icons` генерує з SVG у `public/` PNG 16/32/48/192/512, maskable-версію для Android,
+  `apple-touch-icon.png` і `favicon.ico`; `public/` копіюється в `dist/` під час збірки разом із `manifest.webmanifest`
+
 ### Оновлення каталогу Objektart
 
 Скопіюйте новий `C:\Cremer\DAT\ObjType.DAT` у `catalog/`, перезберіть (`npm run build`) і запуште.

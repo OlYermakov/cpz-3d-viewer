@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Концепт B «Креслення в 3D»: аркуш із загнутим кутом, на ньому ізометрична 3D-полілінія з точками зйомки -->
+  <defs>
+    <radialGradient id="bg" cx="0.72" cy="0.2" r="0.95">
+      <stop offset="0" stop-color="#0e4d70"/><stop offset="0.45" stop-color="#052131"/><stop offset="1" stop-color="#01070b"/>
+    </radialGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9fd6"/><stop offset=".5" stop-color="#0a4f82"/><stop offset="1" stop-color="#03121f"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2fa9db"/><stop offset=".55" stop-color="#0c5f8f"/><stop offset="1" stop-color="#031c2e"/>
+    </linearGradient>
+    <linearGradient id="curl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ad6fb"/><stop offset="1" stop-color="#063253"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+    <clipPath id="clip"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <ellipse cx="320" cy="210" rx="170" ry="150" fill="#1aa3d8" opacity=".35" filter="url(#haze)"/>
+    <g stroke="#9fe0ff" stroke-opacity=".35" stroke-width="2">
+      <rect x="150" y="90" width="236" height="320" rx="32" fill="url(#back)" transform="rotate(12 268 450)" opacity=".75"/>
+      <path d="M104 132a32 32 0 0 1 32-32h168l84 84v240a32 32 0 0 1-32 32H136a32 32 0 0 1-32-32z" fill="url(#front)"/>
+      <path d="M304 100v52a32 32 0 0 0 32 32h52z" fill="url(#curl)"/>
+    </g>
+    <!-- Площина (ізометрична сітка) -->
+    <g stroke="#7fd6f7" stroke-opacity=".35" stroke-width="2" fill="none">
+      <path d="M246 268 L354 330 L246 392 L138 330 Z"/>
+      <path d="M192 299 L300 361 M300 299 L192 361"/>
+    </g>
+    <!-- Вертикальні проєкції точок -->
+    <g stroke="#bfefff" stroke-opacity=".55" stroke-width="3" stroke-dasharray="6 7">
+      <path d="M170 330 V276 M228 300 V214 M282 352 V284 M326 322 V238"/>
+    </g>
+    <!-- 3D-полілінія -->
+    <path d="M170 276 L228 214 L282 284 L326 238" fill="none" stroke="#38c9f5" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" opacity=".8" filter="url(#glow)"/>
+    <path d="M170 276 L228 214 L282 284 L326 238" fill="none" stroke="#e3f8ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="#ffffff">
+      <circle cx="170" cy="276" r="12"/><circle cx="228" cy="214" r="12"/><circle cx="282" cy="284" r="12"/><circle cx="326" cy="238" r="12"/>
+    </g>
+    <g fill="#38c9f5" opacity=".9" filter="url(#glow)">
+      <circle cx="170" cy="276" r="14"/><circle cx="228" cy="214" r="14"/><circle cx="282" cy="284" r="14"/><circle cx="326" cy="238" r="14"/>
+    </g>
+  </g>
+</svg>

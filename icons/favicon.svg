@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Спрощена іконка для малих розмірів (16–48 px): без сітки й проєкцій, товща лінія -->
+  <defs>
+    <radialGradient id="fi-bg" cx="0.72" cy="0.2" r="0.95">
+      <stop offset="0" stop-color="#0f5378"/><stop offset="0.5" stop-color="#052131"/><stop offset="1" stop-color="#01070b"/>
+    </radialGradient>
+    <linearGradient id="fi-back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9fd6"/><stop offset="1" stop-color="#05213a"/>
+    </linearGradient>
+    <linearGradient id="fi-front" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3ab6e4"/><stop offset=".6" stop-color="#0d6597"/><stop offset="1" stop-color="#04233a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#fi-bg)"/>
+  <rect x="21" y="10" width="29" height="40" rx="5" fill="url(#fi-back)" transform="rotate(12 36 57)" opacity=".85"/>
+  <path d="M12 17a5 5 0 0 1 5-5h20l10 10v29a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5z" fill="url(#fi-front)" stroke="#9fe0ff" stroke-opacity=".45"/>
+  <path d="M37 12v6a4 4 0 0 0 4 4h6z" fill="#5fcff6"/>
+  <path d="M18 41 L25 31 L32 40 L40 30" fill="none" stroke="#38c9f5" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+  <path d="M18 41 L25 31 L32 40 L40 30" fill="none" stroke="#effbff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#fff"><circle cx="18" cy="41" r="2.8"/><circle cx="25" cy="31" r="2.8"/><circle cx="32" cy="40" r="2.8"/><circle cx="40" cy="30" r="2.8"/></g>
+</svg>

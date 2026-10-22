@@ -7,12 +7,14 @@
   "scripts": {
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
-    "serve": "esbuild --servedir=dist --serve=5173"
+    "serve": "esbuild --servedir=dist --serve=5173",
+    "icons": "node icons/build-icons.mjs"
   },
   "dependencies": {
     "three": "0.170.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "esbuild": "0.24.0"
   }
 }

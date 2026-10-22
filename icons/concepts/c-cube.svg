@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Концепт C «Скляний куб»: ізометричний блок, на верхній грані — світна полілінія зйомки -->
+  <defs>
+    <radialGradient id="bg" cx="0.72" cy="0.2" r="0.95">
+      <stop offset="0" stop-color="#0e4d70"/><stop offset="0.45" stop-color="#052131"/><stop offset="1" stop-color="#01070b"/>
+    </radialGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4cc6ee"/><stop offset="1" stop-color="#0f6f9f"/>
+    </linearGradient>
+    <linearGradient id="left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d5d8e"/><stop offset="1" stop-color="#03182a"/>
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1584bb"/><stop offset="1" stop-color="#042238"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+    <clipPath id="clip"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <ellipse cx="300" cy="200" rx="180" ry="150" fill="#1aa3d8" opacity=".35" filter="url(#haze)"/>
+    <g stroke="#9fe0ff" stroke-opacity=".45" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M256 268 L392 190 V330 L256 410 Z" fill="url(#right)"/>
+      <path d="M256 268 L120 190 V330 L256 410 Z" fill="url(#left)"/>
+      <path d="M256 112 L392 190 L256 268 L120 190 Z" fill="url(#top)" fill-opacity=".9"/>
+    </g>
+    <!-- полілінія на верхній грані -->
+    <path d="M166 192 L222 160 L262 214 L330 182" fill="none" stroke="#38c9f5" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" opacity=".85" filter="url(#glow)"/>
+    <path d="M166 192 L222 160 L262 214 L330 182" fill="none" stroke="#effbff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="#ffffff"><circle cx="166" cy="192" r="11"/><circle cx="222" cy="160" r="11"/><circle cx="262" cy="214" r="11"/><circle cx="330" cy="182" r="11"/></g>
+    <!-- світні смужки на лівій грані (як у референсі) -->
+    <g stroke-linecap="round" stroke-width="16">
+      <path d="M150 262 L222 304 M150 298 L222 340" stroke="#38c9f5" opacity=".7" filter="url(#glow)"/>
+      <path d="M150 262 L222 304 M150 298 L222 340" stroke="#d6f5ff" stroke-width="12"/>
+    </g>
+  </g>
+</svg>

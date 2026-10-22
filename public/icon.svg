@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Іконка CPZ 3D Viewer: аркуш креслення з загнутим кутом (як у референсі дизайну)
+       і ізометрична 3D-полілінія з точками зйомки та їх проєкціями на площину -->
+  <defs>
+    <radialGradient id="bg" cx="0.72" cy="0.2" r="0.95">
+      <stop offset="0" stop-color="#0e4d70"/><stop offset="0.45" stop-color="#052131"/><stop offset="1" stop-color="#01070b"/>
+    </radialGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9fd6"/><stop offset=".5" stop-color="#0a4f82"/><stop offset="1" stop-color="#03121f"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#34b0e0"/><stop offset=".55" stop-color="#0c5f8f"/><stop offset="1" stop-color="#031c2e"/>
+    </linearGradient>
+    <linearGradient id="curl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ad6fb"/><stop offset="1" stop-color="#063253"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+    <clipPath id="clip"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect id="plate" width="512" height="512" fill="url(#bg)"/>
+    <ellipse cx="320" cy="200" rx="180" ry="150" fill="#1aa3d8" opacity=".38" filter="url(#haze)"/>
+    <g id="art">
+     <!-- центрування композиції (аркуш + віяло карток) у квадраті -->
+     <g transform="translate(256 256) scale(0.88) translate(-294 -282)">
+      <g stroke="#9fe0ff" stroke-opacity=".35" stroke-width="2">
+        <rect x="156" y="92" width="232" height="318" rx="32" fill="url(#back)" transform="rotate(22 268 452)" opacity=".55"/>
+        <rect x="150" y="90" width="236" height="320" rx="32" fill="url(#back)" transform="rotate(11 268 452)" opacity=".8"/>
+        <path d="M104 132a32 32 0 0 1 32-32h168l84 84v240a32 32 0 0 1-32 32H136a32 32 0 0 1-32-32z" fill="url(#front)"/>
+        <path d="M304 100v52a32 32 0 0 0 32 32h52z" fill="url(#curl)"/>
+      </g>
+      <!-- площина -->
+      <g stroke="#7fd6f7" stroke-opacity=".38" stroke-width="2.5" fill="none">
+        <path d="M246 270 L356 333 L246 396 L136 333 Z"/>
+        <path d="M191 301.5 L301 364.5 M301 301.5 L191 364.5"/>
+      </g>
+      <!-- проєкції точок -->
+      <g stroke="#bfefff" stroke-opacity=".6" stroke-width="3.5" stroke-dasharray="7 8" stroke-linecap="round">
+        <path d="M168 332 V272 M226 300 V206 M282 354 V282 M330 322 V230"/>
+      </g>
+      <!-- 3D-полілінія -->
+      <path d="M168 272 L226 206 L282 282 L330 230" fill="none" stroke="#38c9f5" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" opacity=".75" filter="url(#glow)"/>
+      <path d="M168 272 L226 206 L282 282 L330 230" fill="none" stroke="#e6f9ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="#38c9f5" opacity=".9" filter="url(#glow)">
+        <circle cx="168" cy="272" r="17"/><circle cx="226" cy="206" r="17"/><circle cx="282" cy="282" r="17"/><circle cx="330" cy="230" r="17"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="168" cy="272" r="13"/><circle cx="226" cy="206" r="13"/><circle cx="282" cy="282" r="13"/><circle cx="330" cy="230" r="13"/>
+      </g>
+     </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Концепт A «Віяло»: картки креслень і світні смужки, як у референсі -->
+  <defs>
+    <radialGradient id="bg" cx="0.72" cy="0.2" r="0.95">
+      <stop offset="0" stop-color="#0e4d70"/><stop offset="0.45" stop-color="#052131"/><stop offset="1" stop-color="#01070b"/>
+    </radialGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9fd6"/><stop offset=".5" stop-color="#0a4f82"/><stop offset="1" stop-color="#03121f"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3dbbe8"/><stop offset=".5" stop-color="#0f72a3"/><stop offset="1" stop-color="#04263c"/>
+    </linearGradient>
+    <linearGradient id="curl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ad6fb"/><stop offset="1" stop-color="#063253"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#effbff"/><stop offset=".6" stop-color="#bdeaf8"/><stop offset="1" stop-color="#8fd2ea" stop-opacity=".85"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-150%" width="180%" height="400%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+    <clipPath id="clip"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <ellipse cx="320" cy="210" rx="170" ry="150" fill="#1aa3d8" opacity=".35" filter="url(#haze)"/>
+    <g stroke="#9fe0ff" stroke-opacity=".35" stroke-width="2">
+      <rect x="196" y="104" width="196" height="300" rx="30" fill="url(#back)" transform="rotate(30 240 470)" opacity=".7"/>
+      <rect x="190" y="98" width="196" height="306" rx="30" fill="url(#back)" transform="rotate(20 240 470)" opacity=".8"/>
+      <rect x="184" y="92" width="196" height="312" rx="30" fill="url(#back)" transform="rotate(10 240 470)" opacity=".9"/>
+      <path d="M128 148a30 30 0 0 1 30-30h118l76 76v226a30 30 0 0 1-30 30H158a30 30 0 0 1-30-30z" fill="url(#front)"/>
+      <path d="M276 118v46a30 30 0 0 0 30 30h46z" fill="url(#curl)"/>
+    </g>
+    <g>
+      <rect x="86" y="236" width="140" height="28" rx="14" fill="#38c9f5" opacity=".8" filter="url(#glow)"/>
+      <rect x="86" y="236" width="140" height="28" rx="14" fill="url(#bar)"/>
+      <rect x="86" y="286" width="140" height="28" rx="14" fill="#38c9f5" opacity=".7" filter="url(#glow)"/>
+      <rect x="86" y="286" width="140" height="28" rx="14" fill="url(#bar)"/>
+      <rect x="86" y="336" width="140" height="28" rx="14" fill="#38c9f5" opacity=".6" filter="url(#glow)"/>
+      <rect x="86" y="336" width="140" height="28" rx="14" fill="url(#bar)"/>
+    </g>
+  </g>
+</svg>
