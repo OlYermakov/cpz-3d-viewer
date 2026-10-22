@@ -39,4 +39,12 @@ npm run watch    # перезбірка при змінах
 - `src/cpz.js` — читання ZIP (через `DecompressionStream`), парсери `.CP` та `.L`
 - `src/main.js` — сцена Three.js, інтерфейс, вимірювання
 - `src/i18n.js` — переклади (uk / de / en) та перемикання мови
+- `catalog/ObjType.DAT` — каталог Objektart з CAPLAN (`C:\Cremer\DAT\ObjType.DAT`), вбудовується в збірку;
+  назви шарів беруться з поля «Bedeutung»
+- `src/objtypes-i18n.js` — переклади назв Objektart українською та англійською
+
+### Оновлення каталогу Objektart
+
+Скопіюйте новий `C:\Cremer\DAT\ObjType.DAT` у `catalog/`, перезберіть (`npm run build`) і запуште.
+Нові назви без перекладу показуються німецькою — додайте їх у `src/objtypes-i18n.js`.
 - `src/index.html` — розмітка та стилі (скрипт вбудовується під час збірки)

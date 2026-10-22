@@ -81,7 +81,10 @@
   .layer:hover { background: var(--hover); }
   .layer input { margin: 0; }
   .sw { width: 22px; height: 6px; border-radius: 999px; flex: none; box-shadow: 0 0 8px currentColor; }
-  .layer .nm { flex: 1; font-variant-numeric: tabular-nums; }
+  .layer .nm { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .layer .nm b { font-weight: 600; }
+  .layer .nm .ln { color: var(--muted); margin-left: 4px; }
+  .layer .cnt { flex: none; }
   .layer .cnt { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
   input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }

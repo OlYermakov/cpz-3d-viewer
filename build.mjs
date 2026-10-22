@@ -20,6 +20,7 @@ const options = {
   target: 'es2020',
   write: false,
   legalComments: 'none',
+  loader: { '.DAT': 'text', '.dat': 'text' }, // каталог Objektart вбудовується як текст
 };
 
 if (watch) {

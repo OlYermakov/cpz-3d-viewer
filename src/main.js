@@ -5,6 +5,7 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { loadProject } from './cpz.js';
 import { t, getLang, setLang, applyI18n } from './i18n.js';
+import { objName, objColor } from './objtypes.js';
 
 // Система координат сцени: X = Rechtswert (схід), Y = Hochwert (північ), Z = Höhe (вгору).
 // Координати зсунуті до локального початку (центр плану, мінімальна висота) — для точності float32.
@@ -14,6 +15,9 @@ const fmt = (v, d = 3) => (v == null || Number.isNaN(v) ? '—' : v.toFixed(d));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const FALLBACK_COLORS = [0xff5555, 0x55ff55, 0x5599ff, 0xffff55, 0xff55ff, 0x55ffff, 0xffaa33, 0xaa77ff];
+
+// «38 · Mauer oben» — номер Objektart і назва з каталогу (якщо є)
+const layerLabel = (id) => { const n = objName(id); return n ? `${id} · ${n}` : String(id); };
 
 const state = {
   model: null,
@@ -121,7 +125,7 @@ function buildModel(project) {
       const base = cpLayers.get(id);
       layers.set(id, {
         id,
-        color: base?.color ?? FALLBACK_COLORS[layers.size % FALLBACK_COLORS.length],
+        color: base?.color ?? objColor(id) ?? FALLBACK_COLORS[layers.size % FALLBACK_COLORS.length],
         visible: base?.visible ?? true,
         width: base?.width ?? 1,
         lines: [], points: [], nPts: 0,
@@ -537,7 +541,7 @@ function measure(a, b) {
 
 function pointRows(p) {
   return `<dt>${t('pt.name')}</dt><dd><b>${esc(p.name)}</b></dd>
-    <dt>${t('pt.layer')}</dt><dd>${esc(p.layer)}</dd>
+    <dt>${t('pt.layer')}</dt><dd>${esc(layerLabel(p.layer))}</dd>
     <dt>Rechtswert (E)</dt><dd>${fmt(p.x, 4)}</dd>
     <dt>Hochwert (N)</dt><dd>${fmt(p.y, 4)}</dd>
     <dt>Höhe (H)</dt><dd>${p.noZ ? `<span class="muted">${t('pt.noHeight')}</span>` : fmt(p.z, 4)}</dd>
@@ -586,7 +590,7 @@ function updateStatus() {
   const [a, b] = state.measurePts;
   const u = t('m');
   if (p) {
-    $('status').textContent = `${p.name}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   ${t('st.layer')} ${p.layer}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
+    $('status').textContent = `${p.name}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   ${t('st.layer')} ${layerLabel(p.layer)}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
   } else if (state.measure && b) {
     const m = measure(a, b);
     $('status').textContent = `${a.name} → ${b.name}:  ${fmt(m.slope)} ${u}   ${t('m.horizShort')} ${fmt(m.horiz)} ${u}   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} ${u}`;
@@ -623,8 +627,10 @@ function fillLayers() {
     const row = document.createElement('label');
     row.className = 'layer';
     const c = '#' + displayColor(L.color).getHexString();
+    const name = objName(L.id);
+    row.title = layerLabel(L.id);
     row.innerHTML = `<input type="checkbox" ${L.visible ? 'checked' : ''}><span class="sw" style="background:${c};color:${c}"></span>
-      <span class="nm">${esc(L.id)}</span><span class="cnt">${L.lines.length ? `${L.lines.length} ${t('lay.lines')} · ` : ''}${L.nPts} ${t('lay.pts')}</span>`;
+      <span class="nm"><b>${esc(L.id)}</b>${name ? ` <span class="ln">${esc(name)}</span>` : ''}</span><span class="cnt">${L.lines.length ? `${L.lines.length} ${t('lay.lines')} · ` : ''}${L.nPts} ${t('lay.pts')}</span>`;
     const cb = row.querySelector('input');
     cb.addEventListener('change', () => setLayerVisible(L, cb.checked));
     row.addEventListener('dblclick', (e) => {

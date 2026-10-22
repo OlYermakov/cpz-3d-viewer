@@ -1,0 +1,2 @@
+# Оригінальний файл CAPLAN зберігається байт-у-байт (BOM, CRLF)
+catalog/*.DAT -text
