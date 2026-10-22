@@ -9,7 +9,7 @@ export default {
     version: 'Версія',
     link: 'Інструкція…',
     html: `
-<p class="lead">Переглядач креслень <b>CAPLAN</b> (Cremer) у 3D. Працює в браузері на комп'ютері й телефоні, а також офлайн.
+<p class="lead">Переглядач креслень <b>CAPLAN</b> (Cremer) у 3D. Працює в браузері на комп'ютері й телефоні.
 Файли обробляються лише на вашому пристрої й нікуди не надсилаються.</p>
 
 <h3>Формати</h3>
@@ -23,7 +23,7 @@ export default {
 <h3>Відкриття файлу</h3>
 <ul>
   <li>Кнопка «Відкрити файл…» або перетягніть файл у вікно.</li>
-  <li>На телефоні: меню ☰ → «Відкрити файл…».</li>
+  <li>На телефоні: кнопка «Відкрити файл…» на початковому екрані, а коли файл уже відкрито — меню ☰ → «Відкрити файл…».</li>
 </ul>
 
 <h3>Навігація</h3>
@@ -31,7 +31,7 @@ export default {
   <li><b>Миша:</b> ліва кнопка — обертання, права — зсув, коліщатко — масштаб до курсора.</li>
   <li><b>Дотики:</b> один палець — обертання, два — масштаб і зсув.</li>
   <li><b>Види:</b> Зверху, Спереду (з півдня), Збоку (зі сходу), 3D (загальний косий вигляд). «Вписати» показує всі видимі шари. На ПК клавіша <kbd>O</kbd> вмикає вигляд без перспективи — зручно для плану.</li>
-  <li>Компас унизу ліворуч: <b>E</b> — схід, <b>N</b> — північ, <b>H</b> — висота.</li>
+  <li>Компас (на ПК — унизу ліворуч, на телефоні — угорі праворуч): <b>E</b> — схід, <b>N</b> — північ, <b>H</b> — висота.</li>
 </ul>
 
 <h3>Точки й вимірювання</h3>
@@ -42,7 +42,7 @@ export default {
 
 <h3>Шари (Objektart)</h3>
 <ul>
-  <li>Галочка вмикає чи вимикає шар; подвійний клік — показати лише цей шар; «усі» / «жодного».</li>
+  <li>Галочка вмикає чи вимикає шар; подвійний клік (на ПК) — показати лише цей шар; «усі» / «жодного».</li>
   <li>Назви шарів беруться з каталогу Objektart CAPLAN (ObjType.DAT) і показуються вибраною мовою. Шари DXF із CAPLAN (L_, S_, H_ + назва шару) розпізнаються так само.</li>
 </ul>
 
@@ -68,8 +68,9 @@ ${keys([
 
 <h3>На телефоні</h3>
 <ul>
-  <li>Відкрийте сайт і в меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою.</li>
-  <li>Шари й налаштування — у панелі за кнопкою ☰.</li>
+  <li>Інструменти — на нижній панелі: <b>Вид</b> (Зверху / Спереду / Збоку / 3D), <b>Вписати</b>, <b>Виміряти</b>, <b>PNG</b>.</li>
+  <li>Шари й налаштування — у панелі за кнопкою ☰ або натисканням на назву файлу вгорі.</li>
+  <li>У меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою (для роботи потрібен інтернет).</li>
 </ul>
 
 <p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.</p>`,
@@ -81,7 +82,7 @@ ${keys([
     version: 'Version',
     link: 'Anleitung…',
     html: `
-<p class="lead">3D-Viewer für <b>CAPLAN</b>-Zeichnungen (Cremer). Läuft im Browser auf PC und Smartphone, auch offline.
+<p class="lead">3D-Viewer für <b>CAPLAN</b>-Zeichnungen (Cremer). Läuft im Browser auf PC und Smartphone.
 Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 
 <h3>Formate</h3>
@@ -95,7 +96,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 <h3>Datei öffnen</h3>
 <ul>
   <li>Schaltfläche „Datei öffnen…“ oder Datei ins Fenster ziehen.</li>
-  <li>Auf dem Smartphone: Menü ☰ → „Datei öffnen…“.</li>
+  <li>Auf dem Smartphone: Schaltfläche „Datei öffnen…“ auf dem Startbildschirm, bei geöffneter Datei — Menü ☰ → „Datei öffnen…“.</li>
 </ul>
 
 <h3>Navigation</h3>
@@ -103,7 +104,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
   <li><b>Maus:</b> linke Taste — drehen, rechte — verschieben, Mausrad — zoomen zum Cursor.</li>
   <li><b>Touch:</b> ein Finger — drehen, zwei — zoomen und verschieben.</li>
   <li><b>Ansichten:</b> Oben, Vorne (von Süden), Seite (von Osten), 3D (schräge Gesamtansicht). „Einpassen“ zeigt alle sichtbaren Ebenen. Am PC schaltet die Taste <kbd>O</kbd> die Ansicht ohne Perspektive ein — ideal für den Lageplan.</li>
-  <li>Kompass unten links: <b>E</b> — Osten, <b>N</b> — Norden, <b>H</b> — Höhe.</li>
+  <li>Kompass (am PC unten links, auf dem Smartphone oben rechts): <b>E</b> — Osten, <b>N</b> — Norden, <b>H</b> — Höhe.</li>
 </ul>
 
 <h3>Punkte und Messen</h3>
@@ -114,7 +115,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 
 <h3>Ebenen (Objektart)</h3>
 <ul>
-  <li>Häkchen blendet eine Ebene ein oder aus; Doppelklick — nur diese Ebene; „alle“ / „keine“.</li>
+  <li>Häkchen blendet eine Ebene ein oder aus; Doppelklick (am PC) — nur diese Ebene; „alle“ / „keine“.</li>
   <li>Ebenennamen stammen aus dem CAPLAN-Objektartenkatalog (ObjType.DAT) und erscheinen in der gewählten Sprache. DXF-Ebenen aus CAPLAN (L_, S_, H_ + Layername) werden ebenso erkannt.</li>
 </ul>
 
@@ -140,8 +141,9 @@ ${keys([
 
 <h3>Auf dem Smartphone</h3>
 <ul>
-  <li>Seite öffnen und im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol.</li>
-  <li>Ebenen und Einstellungen — im Bereich hinter der Schaltfläche ☰.</li>
+  <li>Werkzeuge — in der unteren Leiste: <b>Ansicht</b> (Oben / Vorne / Seite / 3D), <b>Einpassen</b>, <b>Messen</b>, <b>PNG</b>.</li>
+  <li>Ebenen und Einstellungen — im Bereich hinter der Schaltfläche ☰ oder durch Tippen auf den Dateinamen oben.</li>
+  <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol (Internetverbindung erforderlich).</li>
 </ul>
 
 <p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.</p>`,
@@ -153,7 +155,7 @@ ${keys([
     version: 'Version',
     link: 'Instructions…',
     html: `
-<p class="lead">3D viewer for <b>CAPLAN</b> (Cremer) drawings. Runs in the browser on desktop and phone, offline too.
+<p class="lead">3D viewer for <b>CAPLAN</b> (Cremer) drawings. Runs in the browser on desktop and phone.
 Files are processed only on your device and are never uploaded.</p>
 
 <h3>Formats</h3>
@@ -167,7 +169,7 @@ Files are processed only on your device and are never uploaded.</p>
 <h3>Opening a file</h3>
 <ul>
   <li>Use “Open file…” or drag the file into the window.</li>
-  <li>On a phone: menu ☰ → “Open file…”.</li>
+  <li>On a phone: the “Open file…” button on the start screen, or menu ☰ → “Open file…” once a file is open.</li>
 </ul>
 
 <h3>Navigation</h3>
@@ -175,7 +177,7 @@ Files are processed only on your device and are never uploaded.</p>
   <li><b>Mouse:</b> left button — rotate, right — pan, wheel — zoom to cursor.</li>
   <li><b>Touch:</b> one finger — rotate, two — zoom and pan.</li>
   <li><b>Views:</b> Top, Front (from the south), Side (from the east), 3D (oblique overview). “Fit” frames all visible layers. On a PC the <kbd>O</kbd> key switches to a view without perspective — handy for plan view.</li>
-  <li>Compass bottom left: <b>E</b> — east, <b>N</b> — north, <b>H</b> — height.</li>
+  <li>Compass (bottom left on a PC, top right on a phone): <b>E</b> — east, <b>N</b> — north, <b>H</b> — height.</li>
 </ul>
 
 <h3>Points and measuring</h3>
@@ -186,7 +188,7 @@ Files are processed only on your device and are never uploaded.</p>
 
 <h3>Layers (Objektart)</h3>
 <ul>
-  <li>The checkbox shows or hides a layer; double-click — show only that layer; “all” / “none”.</li>
+  <li>The checkbox shows or hides a layer; double-click (on a PC) — show only that layer; “all” / “none”.</li>
   <li>Layer names come from the CAPLAN Objektart catalog (ObjType.DAT) and are shown in the selected language. CAPLAN DXF layers (L_, S_, H_ + layer name) are recognised too.</li>
 </ul>
 
@@ -212,8 +214,9 @@ ${keys([
 
 <h3>On a phone</h3>
 <ul>
-  <li>Open the site and choose “Add to Home screen” in the browser menu — the app gets its own icon.</li>
-  <li>Layers and settings are in the panel behind the ☰ button.</li>
+  <li>Tools are in the bottom bar: <b>View</b> (Top / Front / Side / 3D), <b>Fit</b>, <b>Measure</b>, <b>PNG</b>.</li>
+  <li>Layers and settings are in the panel behind the ☰ button, or tap the file name at the top.</li>
+  <li>Choose “Add to Home screen” in the browser menu — the app gets its own icon (an internet connection is required).</li>
 </ul>
 
 <p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.</p>`,
