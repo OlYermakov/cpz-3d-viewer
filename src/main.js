@@ -4,6 +4,7 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { loadProject } from './cpz.js';
+import { t, getLang, setLang, applyI18n } from './i18n.js';
 
 // Система координат сцени: X = Rechtswert (схід), Y = Hochwert (північ), Z = Höhe (вгору).
 // Координати зсунуті до локального початку (центр плану, мінімальна висота) — для точності float32.
@@ -90,7 +91,7 @@ new ResizeObserver(resize).observe(viewport);
 
 function applyTheme() {
   document.documentElement.dataset.theme = state.theme;
-  $('btnTheme').textContent = state.theme === 'dark' ? 'Світла тема' : 'Темна тема';
+  $('btnTheme').textContent = t(state.theme === 'dark' ? 'theme.light' : 'theme.dark');
   if (state.model) rebuildScene();
   requestRender();
 }
@@ -447,7 +448,7 @@ function drawOverlay() {
     ctx.lineWidth = 2; ctx.strokeStyle = MEASURE; ctx.stroke();
     ctx.restore();
     const m = measure(mp[0].p, mp[1].p);
-    const text = `${fmt(m.slope)} м`;
+    const text = `${fmt(m.slope)} ${t('m')}`;
     ctx.font = '600 12px "Segoe UI", system-ui, sans-serif';
     const tw = ctx.measureText(text).width;
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
@@ -508,7 +509,7 @@ function drawCompass(dark) {
     ctx.font = '11px "Segoe UI", system-ui, sans-serif';
     ctx.fillStyle = dark ? '#7fa6b8' : '#557a8c';
     ctx.textAlign = 'center';
-    ctx.fillText(`сітка ${grid.userData.step} м`, cx, cy + len + 28);
+    ctx.fillText(t('grid', { s: grid.userData.step }), cx, cy + len + 28);
     ctx.textAlign = 'start';
   }
 }
@@ -535,43 +536,47 @@ function measure(a, b) {
 }
 
 function pointRows(p) {
-  return `<dt>Назва</dt><dd><b>${esc(p.name)}</b></dd>
-    <dt>Шар</dt><dd>${esc(p.layer)}</dd>
+  return `<dt>${t('pt.name')}</dt><dd><b>${esc(p.name)}</b></dd>
+    <dt>${t('pt.layer')}</dt><dd>${esc(p.layer)}</dd>
     <dt>Rechtswert (E)</dt><dd>${fmt(p.x, 4)}</dd>
     <dt>Hochwert (N)</dt><dd>${fmt(p.y, 4)}</dd>
-    <dt>Höhe (H)</dt><dd>${p.noZ ? '<span class="muted">немає</span>' : fmt(p.z, 4)}</dd>
+    <dt>Höhe (H)</dt><dd>${p.noZ ? `<span class="muted">${t('pt.noHeight')}</span>` : fmt(p.z, 4)}</dd>
     <dt>W</dt><dd>${p.code}</dd>
-    ${p.attrs?.filter(Boolean).length ? `<dt>Атрибути</dt><dd>${esc(p.attrs.filter(Boolean).join(' | '))}</dd>` : ''}`;
+    ${p.attrs?.filter(Boolean).length ? `<dt>${t('pt.attrs')}</dt><dd>${esc(p.attrs.filter(Boolean).join(' | '))}</dd>` : ''}`;
 }
+
+// Підказки вимірювання: «клікніть» для миші, «торкніться» для дотику
+const act = (key) => t(`${key}.${isTouch ? 'tap' : 'click'}`);
 
 function updateInfo() {
   const sec = $('secInfo'), info = $('info');
+  const u = t('m');
   if (state.measure) {
     sec.hidden = false;
-    $('infoTitle').textContent = 'Вимірювання';
+    $('infoTitle').textContent = t('sec.measure');
     const [a, b] = state.measurePts;
-    if (!a) { info.innerHTML = '<div class="muted">Клікніть першу точку</div>'; return; }
-    if (!b) { info.innerHTML = `<div>A: <b>${esc(a.name)}</b></div><div class="muted">Клікніть другу точку</div>`; return; }
+    if (!a) { info.innerHTML = `<div class="muted">${act('m.first')}</div>`; return; }
+    if (!b) { info.innerHTML = `<div>A: <b>${esc(a.name)}</b></div><div class="muted">${act('m.second')}</div>`; return; }
     const m = measure(a, b);
     info.innerHTML = `<div style="margin-bottom:6px"><b>${esc(a.name)}</b> → <b>${esc(b.name)}</b></div>
-      <div class="res">${fmt(m.slope)} м</div>
+      <div class="res">${fmt(m.slope)} ${u}</div>
       <dl class="kv" style="margin-top:6px">
-        <dt>Похила відстань</dt><dd>${fmt(m.slope)} м</dd>
-        <dt>Горизонтальна</dt><dd>${fmt(m.horiz)} м</dd>
-        <dt>Перевищення ΔH</dt><dd>${Number.isNaN(m.dH) ? '—' : (m.dH >= 0 ? '+' : '') + fmt(m.dH)} м</dd>
-        <dt>Ухил</dt><dd>${Number.isNaN(m.grade) ? '—' : fmt(m.grade, 2) + ' %'}</dd>
+        <dt>${t('m.slope')}</dt><dd>${fmt(m.slope)} ${u}</dd>
+        <dt>${t('m.horiz')}</dt><dd>${fmt(m.horiz)} ${u}</dd>
+        <dt>${t('m.dh')}</dt><dd>${Number.isNaN(m.dH) ? '—' : (m.dH >= 0 ? '+' : '') + fmt(m.dH)} ${u}</dd>
+        <dt>${t('m.grade')}</dt><dd>${Number.isNaN(m.grade) ? '—' : fmt(m.grade, 2) + ' %'}</dd>
         <dt>ΔE / ΔN</dt><dd>${fmt(m.dE)} / ${fmt(m.dN)}</dd>
-        <dt>Дирекційний кут</dt><dd>${fmt(m.az, 4)}° · ${fmt(m.gon, 4)} gon</dd>
+        <dt>${t('m.az')}</dt><dd>${fmt(m.az, 4)}° · ${fmt(m.gon, 4)} gon</dd>
       </dl>`;
     return;
   }
   const p = state.selected;
   if (!p) { sec.hidden = true; return; }
   sec.hidden = false;
-  $('infoTitle').textContent = 'Точка';
-  const lines = p.lines.map((l) => `<div style="margin-top:6px"><b>${esc(l.name)}</b> <span class="muted">(${l.pts.length} т.${l.closed ? ', замкнена' : ''}${l.is2D ? ', 2D' : ''})</span><br>
-      <span class="muted">Довжина:</span> ${fmt(l.len2D)} м (план)${Number.isNaN(l.len3D) ? '' : ` · ${fmt(l.len3D)} м (3D)`}</div>`).join('');
-  info.innerHTML = `<dl class="kv">${pointRows(p)}</dl>${lines ? `<div style="margin-top:4px" class="muted">Лінії:</div>${lines}` : ''}`;
+  $('infoTitle').textContent = t('sec.point');
+  const lines = p.lines.map((l) => `<div style="margin-top:6px"><b>${esc(l.name)}</b> <span class="muted">(${l.pts.length} ${t('line.pts')}${l.closed ? ', ' + t('line.closed') : ''}${l.is2D ? ', 2D' : ''})</span><br>
+      <span class="muted">${t('line.length')}:</span> ${fmt(l.len2D)} ${u} (${t('line.plan')})${Number.isNaN(l.len3D) ? '' : ` · ${fmt(l.len3D)} ${u} (3D)`}</div>`).join('');
+  info.innerHTML = `<dl class="kv">${pointRows(p)}</dl>${lines ? `<div style="margin-top:4px" class="muted">${t('line.lines')}</div>${lines}` : ''}`;
 }
 
 // Рядок стану: точка під курсором, інакше вибрана точка / результат вимірювання
@@ -579,18 +584,17 @@ function updateInfo() {
 function updateStatus() {
   const p = state.hover ?? (state.measure ? null : state.selected);
   const [a, b] = state.measurePts;
+  const u = t('m');
   if (p) {
-    $('status').textContent = `${p.name}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   шар ${p.layer}${p.lines.length ? '   лінія ' + p.lines.map((l) => l.name).join(', ') : ''}`;
+    $('status').textContent = `${p.name}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   ${t('st.layer')} ${p.layer}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
   } else if (state.measure && b) {
     const m = measure(a, b);
-    $('status').textContent = `${a.name} → ${b.name}:  ${fmt(m.slope)} м   гориз. ${fmt(m.horiz)} м   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} м`;
+    $('status').textContent = `${a.name} → ${b.name}:  ${fmt(m.slope)} ${u}   ${t('m.horizShort')} ${fmt(m.horiz)} ${u}   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} ${u}`;
   } else if (state.measure) {
-    const what = isTouch ? 'торкніться' : 'клікніть';
-    $('status').textContent = a ? `A: ${a.name} — ${what} другу точку` : `Вимірювання: ${what} дві точки`;
+    $('status').textContent = a ? `A: ${a.name} — ${act('m.second')}` : act('m.two');
   } else if (state.model) {
-    $('status').textContent = isTouch
-      ? `${state.model.name} · ${pickPts.length} точок · ${state.model.lines.length} ліній · дотик до точки — інфо`
-      : `${state.model.name}  ·  ${pickPts.length} точок  ·  ${state.model.lines.length} ліній  ·  ЛКМ — обертання, ПКМ — зсув, коліщатко — масштаб`;
+    const base = `${state.model.name}  ·  ${pickPts.length} ${t('st.points')}  ·  ${state.model.lines.length} ${t('st.lines')}`;
+    $('status').textContent = `${base}  ·  ${t(isTouch ? 'st.tap' : 'st.mouse')}`;
   }
 }
 
@@ -600,16 +604,16 @@ function fillFileInfo() {
   const M = state.model;
   const gen = M.header.find((h) => /CAPLAN/i.test(h)) ?? '';
   $('fileInfo').innerHTML = `
-    <dt>Проєкт</dt><dd><b>${esc(M.name)}</b></dd>
-    ${gen ? `<dt>Створено</dt><dd>${esc(gen.replace(/^Folgende Daten wurden von\s*/i, '').replace(/\s*erzeugt\.?$/i, ''))}</dd>` : ''}
-    <dt>Файли</dt><dd>${esc(M.sources.join(', '))}</dd>
-    <dt>Точок</dt><dd>${M.nPoints} (${M.points.length} окремих)</dd>
-    <dt>Ліній</dt><dd>${M.lines.length}</dd>
-    <dt>Шарів</dt><dd>${M.layerList.length}</dd>
+    <dt>${t('fi.project')}</dt><dd><b>${esc(M.name)}</b></dd>
+    ${gen ? `<dt>${t('fi.created')}</dt><dd>${esc(gen.replace(/^Folgende Daten wurden von\s*/i, '').replace(/\s*erzeugt\.?$/i, ''))}</dd>` : ''}
+    <dt>${t('fi.files')}</dt><dd>${esc(M.sources.join(', '))}</dd>
+    <dt>${t('fi.points')}</dt><dd>${M.nPoints} (${M.points.length} ${t('fi.standalone')})</dd>
+    <dt>${t('fi.lines')}</dt><dd>${M.lines.length}</dd>
+    <dt>${t('fi.layers')}</dt><dd>${M.layerList.length}</dd>
     <dt>E</dt><dd>${fmt(M.minX, 2)} … ${fmt(M.maxX, 2)}</dd>
     <dt>N</dt><dd>${fmt(M.minY, 2)} … ${fmt(M.maxY, 2)}</dd>
     <dt>H</dt><dd>${M.hasRealZ ? `${fmt(M.minZ, 2)} … ${fmt(M.maxZ, 2)}` : '—'}</dd>
-    <dt>Розмір</dt><dd>${fmt(M.maxX - M.minX, 1)} × ${fmt(M.maxY - M.minY, 1)} × ${fmt(M.zRange, 1)} м</dd>`;
+    <dt>${t('fi.size')}</dt><dd>${fmt(M.maxX - M.minX, 1)} × ${fmt(M.maxY - M.minY, 1)} × ${fmt(M.zRange, 1)} ${t('m')}</dd>`;
 }
 
 function fillLayers() {
@@ -620,7 +624,7 @@ function fillLayers() {
     row.className = 'layer';
     const c = '#' + displayColor(L.color).getHexString();
     row.innerHTML = `<input type="checkbox" ${L.visible ? 'checked' : ''}><span class="sw" style="background:${c};color:${c}"></span>
-      <span class="nm">${esc(L.id)}</span><span class="cnt">${L.lines.length ? L.lines.length + ' лін. · ' : ''}${L.nPts} т.</span>`;
+      <span class="nm">${esc(L.id)}</span><span class="cnt">${L.lines.length ? `${L.lines.length} ${t('lay.lines')} · ` : ''}${L.nPts} ${t('lay.pts')}</span>`;
     const cb = row.querySelector('input');
     cb.addEventListener('change', () => setLayerVisible(L, cb.checked));
     row.addEventListener('dblclick', (e) => {
@@ -825,7 +829,20 @@ function loop() {
   drawOverlay();
 }
 
-applyTheme();
+// ---------------------------------------------------------------- Мова інтерфейсу
+
+function applyLang(l) {
+  setLang(l);
+  applyI18n();
+  for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === getLang());
+  applyTheme(); // текст кнопки теми
+  if (state.model) { fillFileInfo(); fillLayers(); updateInfo(); }
+  updateStatus();
+  requestRender(); // підпис сітки на полотні
+}
+document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => applyLang(b.dataset.lang)));
+
+applyLang(getLang());
 resize();
 loop();
 

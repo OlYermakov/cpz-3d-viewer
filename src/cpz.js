@@ -6,6 +6,8 @@
 //       "<Назва лінії>                                |<Objektart>|..."            — початок лінії
 //     Точки після заголовка лінії належать цій лінії до наступного заголовка.
 
+import { t } from './i18n.js';
+
 // ---------------------------------------------------------------- ZIP
 
 const SIG_EOCD = 0x06054b50;
@@ -22,13 +24,13 @@ export async function readZip(bytes) {
   for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 0xffff); i--) {
     if (dv.getUint32(i, true) === SIG_EOCD) { eocd = i; break; }
   }
-  if (eocd < 0) throw new Error('Файл не є ZIP-архівом (CPZ)');
+  if (eocd < 0) throw new Error(t('e.notZip'));
 
   const count = dv.getUint16(eocd + 10, true);
   let p = dv.getUint32(eocd + 16, true);
   const files = [];
   for (let k = 0; k < count; k++) {
-    if (dv.getUint32(p, true) !== SIG_CEN) throw new Error('Пошкоджений каталог ZIP');
+    if (dv.getUint32(p, true) !== SIG_CEN) throw new Error(t('e.badDir'));
     const flags = dv.getUint16(p + 8, true);
     const method = dv.getUint16(p + 10, true);
     const csize = dv.getUint32(p + 20, true);
@@ -39,14 +41,14 @@ export async function readZip(bytes) {
     const name = new TextDecoder(flags & 0x800 ? 'utf-8' : 'windows-1252').decode(bytes.subarray(p + 46, p + 46 + nlen));
     p += 46 + nlen + elen + clen;
     if (name.endsWith('/')) continue;
-    if (flags & 1) throw new Error(`Файл «${name}» в архіві зашифрований`);
-    if (dv.getUint32(loc, true) !== SIG_LOC) throw new Error('Пошкоджений ZIP-архів');
+    if (flags & 1) throw new Error(t('e.encrypted', { name }));
+    if (dv.getUint32(loc, true) !== SIG_LOC) throw new Error(t('e.badZip'));
     const start = loc + 30 + dv.getUint16(loc + 26, true) + dv.getUint16(loc + 28, true);
     const raw = bytes.subarray(start, start + csize);
     let data;
     if (method === 0) data = raw.slice();
     else if (method === 8) data = await inflateRaw(raw);
-    else throw new Error(`Непідтримуваний метод стиснення ${method} («${name}»)`);
+    else throw new Error(t('e.method', { m: method, name }));
     files.push({ name, data });
   }
   return files;
@@ -178,6 +180,6 @@ export async function loadProject(inputs) {
     project.sources.push(e.name);
     project.name ??= e.name.replace(/\.[^.]+$/, '');
   }
-  if (!project.sources.length) throw new Error('У файлі не знайдено точок або ліній (очікується .L / .KOR всередині CPZ)');
+  if (!project.sources.length) throw new Error(t('e.noData'));
   return project;
 }

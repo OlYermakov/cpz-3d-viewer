@@ -49,6 +49,13 @@
   .brand svg { flex: none; filter: drop-shadow(0 0 10px rgba(44, 194, 242, .45)); }
   .brand h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: .01em; }
   .brand p { margin: 0; font-size: 11px; color: var(--muted); }
+  .brand-text { flex: 1; min-width: 0; }
+  .brand-text h1, .brand-text p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brand-text h1 { font-size: 15px; }
+  .lang { display: flex; padding: 2px; gap: 1px; border-radius: 999px; border: 1px solid var(--edge); background: rgba(120, 210, 250, .05); flex: none; }
+  .lang button { border: 1px solid transparent; background: transparent; padding: 2px 7px; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
+  .lang button:hover { color: var(--text); background: var(--hover); }
+  .lang button.on { color: #fff; }
   .scroll { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: rgba(110, 205, 245, .25) transparent; }
   section { padding: 12px 16px; border-bottom: 1px solid var(--edge); }
   section:last-child { border-bottom: none; }
@@ -148,8 +155,9 @@
     aside header::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px;
       background: var(--edge-hi); margin: 0 auto 10px; }
     .brand { margin-bottom: 10px; }
-    #btnCloseSheet { position: absolute; right: 12px; top: 18px; width: 34px; height: 34px; padding: 0;
+    #btnCloseSheet { flex: none; width: 34px; height: 34px; padding: 0;
       align-items: center; justify-content: center; font-size: 15px; }
+    .lang button { padding: 6px 10px; font-size: 12px; min-height: 0; }
     #scrim { position: fixed; inset: 0; z-index: 25; background: rgba(0, 0, 0, .35); opacity: 0; pointer-events: none; transition: opacity .25s; }
     body.sheet-open #scrim { opacity: 1; pointer-events: auto; }
 
@@ -196,61 +204,54 @@
           <rect x="6" y="28" width="15" height="3.4" rx="1.7" fill="#c9f1ff" opacity=".85"/>
           <rect x="6" y="34" width="15" height="3.4" rx="1.7" fill="#c9f1ff" opacity=".7"/>
         </svg>
-        <div><h1>CPZ 3D Viewer</h1><p>CAPLAN · Cremer</p></div>
+        <div class="brand-text"><h1>CPZ 3D Viewer</h1><p>CAPLAN · Cremer</p></div>
+        <div class="lang" role="group" data-i18n-title="lang">
+          <button data-lang="uk">UA</button><button data-lang="de">DE</button><button data-lang="en">EN</button>
+        </div>
+        <button class="only-mobile" id="btnCloseSheet" data-i18n-title="close">✕</button>
       </div>
-      <button class="only-mobile" id="btnCloseSheet" title="Закрити">✕</button>
-      <button class="primary" id="btnOpen">Відкрити файл…</button>
+      <button class="primary" id="btnOpen" data-i18n="open">Open file…</button>
       <input type="file" id="fileInput" accept=".cpz,.CPZ,.cp,.l,.kor,.txt" multiple hidden>
       <div id="loadErr" class="err"></div>
     </header>
     <div class="scroll">
       <section id="secFile" hidden>
-        <h2>Файл</h2>
+        <h2 data-i18n="sec.file">File</h2>
         <dl class="kv" id="fileInfo"></dl>
       </section>
       <section id="secInfo" hidden>
-        <h2><span id="infoTitle">Точка</span><button class="mini" id="btnClearInfo">✕</button></h2>
+        <h2><span id="infoTitle"></span><button class="mini" id="btnClearInfo">✕</button></h2>
         <div id="info"></div>
       </section>
       <section id="secLayers" hidden>
-        <h2>Шари · Objektart
-          <span><button class="mini" id="btnAllOn">усі</button> <button class="mini" id="btnAllOff">жодного</button></span>
+        <h2><span data-i18n="sec.layers">Layers · Objektart</span>
+          <span><button class="mini" id="btnAllOn" data-i18n="all">all</button> <button class="mini" id="btnAllOff" data-i18n="none">none</button></span>
         </h2>
         <div id="layers"></div>
-        <div class="hint">Подвійний клік — показати лише цей шар</div>
+        <div class="hint" data-i18n="layers.hint"></div>
       </section>
       <section id="secView" hidden>
-        <h2>Відображення</h2>
+        <h2 data-i18n="sec.view">Display</h2>
         <div class="checks">
-          <label><input type="checkbox" id="optLines" checked> Лінії</label>
-          <label><input type="checkbox" id="optPoints" checked> Точки</label>
-          <label><input type="checkbox" id="optLabels"> Назви точок</label>
-          <label><input type="checkbox" id="optHeights"> Висоти</label>
-          <label><input type="checkbox" id="optGrid" checked> Сітка</label>
-          <label><input type="checkbox" id="opt2D" checked title="Об'єкти з висотою 0 (без висоти) розміщуються на рівні найнижчої точки"> 2D-об'єкти</label>
-          <label><input type="checkbox" id="optDrop" title="Вертикальні лінії від точок до сітки"> Проєкції</label>
+          <label><input type="checkbox" id="optLines" checked> <span data-i18n="opt.lines"></span></label>
+          <label><input type="checkbox" id="optPoints" checked> <span data-i18n="opt.points"></span></label>
+          <label><input type="checkbox" id="optLabels"> <span data-i18n="opt.labels"></span></label>
+          <label><input type="checkbox" id="optHeights"> <span data-i18n="opt.heights"></span></label>
+          <label><input type="checkbox" id="optGrid" checked> <span data-i18n="opt.grid"></span></label>
+          <label data-i18n-title="opt.2d.title"><input type="checkbox" id="opt2D" checked> <span data-i18n="opt.2d"></span></label>
+          <label data-i18n-title="opt.drop.title"><input type="checkbox" id="optDrop"> <span data-i18n="opt.drop"></span></label>
         </div>
-        <div class="opt"><label for="optColor">Колір</label>
-          <select id="optColor"><option value="layer">за шаром</option><option value="height">за висотою</option></select></div>
+        <div class="opt"><label for="optColor" data-i18n="opt.color"></label>
+          <select id="optColor"><option value="layer" data-i18n="color.layer"></option><option value="height" data-i18n="color.height"></option></select></div>
         <div class="opt"><span>Z ×</span><input type="range" id="optZ" min="1" max="10" step="0.5" value="1"><span class="val" id="valZ">1</span></div>
-        <div class="opt"><span>Лінії</span><input type="range" id="optLW" min="1" max="8" step="0.5" value="2"><span class="val" id="valLW">2</span></div>
-        <div class="opt"><span>Точки</span><input type="range" id="optPS" min="2" max="16" step="1" value="6"><span class="val" id="valPS">6</span></div>
-        <div class="opt"><button id="btnTheme" style="flex:1">Світла тема</button></div>
+        <div class="opt"><span data-i18n="opt.lines"></span><input type="range" id="optLW" min="1" max="8" step="0.5" value="2"><span class="val" id="valLW">2</span></div>
+        <div class="opt"><span data-i18n="opt.points"></span><input type="range" id="optPS" min="2" max="16" step="1" value="6"><span class="val" id="valPS">6</span></div>
+        <div class="opt"><button id="btnTheme" style="flex:1"></button></div>
       </section>
       <section>
-        <h2>Керування</h2>
-        <div class="muted hint-touch">
-          1 палець — обертання<br>
-          2 пальці — масштаб і зсув<br>
-          Дотик до точки — координати внизу екрана<br>
-          «Виміряти» — торкніться двох точок
-        </div>
-        <div class="muted hint-mouse">
-          ЛКМ — обертання · ПКМ — зсув · коліщатко — масштаб<br>
-          Клік на точці — інформація<br>
-          <kbd>F</kbd> вписати · <kbd>T</kbd> зверху · <kbd>1</kbd>–<kbd>4</kbd> види · <kbd>O</kbd> орто<br>
-          <kbd>M</kbd> вимірювання · <kbd>N</kbd> назви · <kbd>Esc</kbd> скинути
-        </div>
+        <h2 data-i18n="sec.controls">Controls</h2>
+        <div class="muted hint-touch" data-i18n-html="hint.touch"></div>
+        <div class="muted hint-mouse" data-i18n-html="hint.mouse"></div>
       </section>
     </div>
   </aside>
@@ -289,27 +290,27 @@
           <rect x="72" y="204" width="80" height="16" rx="8" fill="url(#bar)"/>
         </g>
       </svg>
-      <b class="only-desktop">Перетягніть сюди файл .CPZ</b>
-      <b class="only-mobile" style="justify-content:center">Відкрийте файл .CPZ</b>
-      <div class="sub"><span class="only-desktop">або натисніть «Відкрити файл…»</span><small>Також підтримуються .CP + .L / .KOR</small></div>
-      <button class="primary btn-open" id="btnOpen2">Відкрити файл…</button>
+      <b class="only-desktop" data-i18n="drop.desktop"></b>
+      <b class="only-mobile" style="justify-content:center" data-i18n="drop.mobile"></b>
+      <div class="sub"><span class="only-desktop" data-i18n="drop.or"></span><small data-i18n="drop.also"></small></div>
+      <button class="primary btn-open" id="btnOpen2" data-i18n="open"></button>
     </div></div>
     <div id="toolbar">
-      <button class="glass only-mobile" id="btnMenu" title="Меню">☰</button>
+      <button class="glass only-mobile" id="btnMenu" data-i18n-title="menu">☰</button>
       <div class="grp glass">
-        <button data-view="top" title="Вид зверху (T)">Зверху</button>
-        <button data-view="front" title="Вид з півдня (2)">Спереду</button>
-        <button data-view="side" title="Вид зі сходу (3)">Збоку</button>
-        <button data-view="iso" title="Ізометрія (4)">Ізо</button>
-        <button data-view="fit" title="Вписати (F)">⤢ Вписати</button>
+        <button data-view="top" data-i18n="view.top" data-i18n-title="view.top.title"></button>
+        <button data-view="front" data-i18n="view.front" data-i18n-title="view.front.title"></button>
+        <button data-view="side" data-i18n="view.side" data-i18n-title="view.side.title"></button>
+        <button data-view="iso" data-i18n="view.iso" data-i18n-title="view.iso.title"></button>
+        <button data-view="fit" data-i18n="view.fit" data-i18n-title="view.fit.title"></button>
       </div>
       <div class="grp glass">
-        <button id="btnOrtho" title="Ортогональна проєкція (O)">Орто</button>
-        <button id="btnMeasure" title="Вимірювання між двома точками (M)">Виміряти</button>
-        <button id="btnShot" title="Зберегти зображення PNG">PNG</button>
+        <button id="btnOrtho" data-i18n="ortho" data-i18n-title="ortho.title"></button>
+        <button id="btnMeasure" data-i18n="measure" data-i18n-title="measure.title"></button>
+        <button id="btnShot" data-i18n-title="png.title">PNG</button>
       </div>
     </div>
-    <div id="status" class="glass">Відкрийте файл .CPZ</div>
+    <div id="status" class="glass"></div>
   </main>
   <div id="scrim"></div>
 </div>
