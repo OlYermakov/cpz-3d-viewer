@@ -1,12 +1,11 @@
 // Розділ «Про застосунок та інструкція» — тексти трьома мовами (статична розмітка, без даних користувача).
 
-const REPO = 'https://github.com/OlYermakov/cpz-3d-viewer';
-
 const keys = (rows) => `<table class="keys">${rows.map((r) => `<tr>${r.map(([k, d]) => `<td>${k.split(' ').map((x) => `<kbd>${x}</kbd>`).join(' ')}</td><td>${d}</td>`).join('')}</tr>`).join('')}</table>`;
 
 export default {
   uk: {
     title: 'Про застосунок та інструкція',
+    dev: 'Розробник',
     version: 'Версія',
     link: 'Інструкція…',
     html: `
@@ -72,12 +71,12 @@ ${keys([
   <li>Шари й налаштування — у панелі за кнопкою ☰.</li>
 </ul>
 
-<p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі. Код застосунку:
-<a href="${REPO}" target="_blank" rel="noopener">github.com/OlYermakov/cpz-3d-viewer</a></p>`,
+<p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.</p>`,
   },
 
   de: {
     title: 'Über die App und Anleitung',
+    dev: 'Entwickler',
     version: 'Version',
     link: 'Anleitung…',
     html: `
@@ -143,12 +142,12 @@ ${keys([
   <li>Ebenen und Einstellungen — im Bereich hinter der Schaltfläche ☰.</li>
 </ul>
 
-<p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich. Quellcode:
-<a href="${REPO}" target="_blank" rel="noopener">github.com/OlYermakov/cpz-3d-viewer</a></p>`,
+<p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.</p>`,
   },
 
   en: {
     title: 'About the app & instructions',
+    dev: 'Developer',
     version: 'Version',
     link: 'Instructions…',
     html: `
@@ -214,7 +213,6 @@ ${keys([
   <li>Layers and settings are in the panel behind the ☰ button.</li>
 </ul>
 
-<p class="foot">Interface language — the UA · DE · EN switch at the top of the panel. Source code:
-<a href="${REPO}" target="_blank" rel="noopener">github.com/OlYermakov/cpz-3d-viewer</a></p>`,
+<p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.</p>`,
   },
 };

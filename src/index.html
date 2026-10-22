@@ -158,6 +158,8 @@
   .about-titles { flex: 1; min-width: 0; }
   .about-titles h2 { margin: 0 0 2px; font-size: 19px; font-weight: 650; }
   .about-titles p { margin: 0; font-size: 12px; }
+  .about-titles #aboutDev { margin-top: 3px; font-size: 13px; }
+  .about-titles #aboutDev span { color: var(--muted); }
   #btnAboutClose { flex: none; width: 36px; height: 36px; padding: 0; font-size: 15px; align-self: flex-start; }
   .modal-body { overflow-y: auto; padding: 4px 24px 22px; line-height: 1.55; scrollbar-width: thin; scrollbar-color: rgba(110, 205, 245, .25) transparent; }
   .modal-body .lead { font-size: 14px; margin: 14px 0 4px; }
@@ -352,7 +354,7 @@
     <div class="modal-card glass">
       <header class="modal-head">
         <span class="about-icon"><!--ABOUT_ICON--></span>
-        <div class="about-titles"><h2 id="aboutTitle" data-i18n="about.title"></h2><p id="aboutVer" class="muted"></p></div>
+        <div class="about-titles"><h2 id="aboutTitle" data-i18n="about.title"></h2><p id="aboutVer" class="muted"></p><p id="aboutDev"></p></div>
         <button id="btnAboutClose" data-i18n-title="close">✕</button>
       </header>
       <div class="modal-body" id="aboutBody"></div>

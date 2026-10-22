@@ -747,10 +747,12 @@ $('btnCloseSheet').addEventListener('click', () => setSheet(false));
 $('scrim').addEventListener('click', () => setSheet(false));
 
 // Вікно «Про застосунок та інструкція» — по кліку на іконку в панелі
+const DEVELOPER = 'Oleksii Yermakov';
 const aboutEl = $('about');
 let aboutReturnFocus = null;
 function fillAbout() {
   $('aboutVer').textContent = `CPZ 3D Viewer · ${t('about.version')} ${__APP_VERSION__} · ${__BUILD_DATE__}`;
+  $('aboutDev').innerHTML = `<span>${t('about.dev')}:</span> <b>${DEVELOPER}</b>`;
   $('aboutBody').innerHTML = t('about.html');
 }
 function setAbout(open) {
