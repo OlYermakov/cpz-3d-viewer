@@ -405,6 +405,58 @@ const VIEW_DIRS = {
   iso: [-1, -1, 0.9],
 };
 
+// ---------------------------------------------------------------- Наближення без «зупинки»
+// OrbitControls на кожен крок зуму (і швидкість зсуву) рахує від відстані до точки обертання, що лежить
+// на центральному промені камери. Якщо ця точка близько, а об'єкти під курсором далеко, кроки стають
+// мізерними — зум «гальмує й зупиняється». Тому перед кожним кроком зуму/зсуву точка обертання ставиться
+// на тому ж центральному промені на глибині об'єктів під курсором: вигляд не змінюється, а крок завжди
+// пропорційний справжній відстані до того, що наближаємо. Ближня площина відсікання стежить за відстанню.
+let sceneR = 20;
+const fwd = new THREE.Vector3();
+const zoomRay = new THREE.Raycaster();
+const zoomNdc = new THREE.Vector2();
+const zoomPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const zoomHit = new THREE.Vector3();
+const zoomTmp = new THREE.Vector3();
+
+// Відстань від камери до об'єктів під точкою екрана (x, y у пікселях полотна)
+function depthAt(x, y) {
+  // найближча видима точка моделі в радіусі 40 px
+  let best = null, bd = 40 * 40;
+  for (const s of screenPts) { const d = (s.x - x) ** 2 + (s.y - y) ** 2; if (d < bd) { bd = d; best = s; } }
+  if (best) return persp.position.distanceTo(zoomTmp.set(best.p.lx, best.p.ly, best.p.lz * state.zScale));
+  // інакше — горизонтальна площина на середній висоті моделі
+  const M = state.model;
+  zoomPlane.constant = -(M.hasRealZ ? ((M.fit.z0 + M.fit.z1) / 2 - M.origin.z) * state.zScale : 0);
+  zoomNdc.set((x / vw) * 2 - 1, -(y / vh) * 2 + 1);
+  zoomRay.setFromCamera(zoomNdc, persp);
+  if (zoomRay.ray.intersectPlane(zoomPlane, zoomHit)) {
+    const d = zoomHit.distanceTo(persp.position);
+    if (d < sceneR * 20) return d;
+  }
+  // інакше — глибина центру моделі вздовж погляду
+  fwd.set(0, 0, -1).transformDirection(persp.matrixWorld);
+  return Math.max(modelBox().getCenter(zoomTmp).sub(persp.position).dot(fwd), sceneR * 0.05);
+}
+
+function retargetAt(clientX, clientY) {
+  if (camera !== persp || !state.model) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  const depth = Math.max(depthAt(clientX - r.left, clientY - r.top), sceneR * 1e-4);
+  fwd.set(0, 0, -1).transformDirection(persp.matrixWorld);
+  controls.target.copy(persp.position).addScaledVector(fwd, depth);
+}
+
+function fitClipPlanes() {
+  const d = persp.position.distanceTo(controls.target);
+  const near = THREE.MathUtils.clamp(d * 0.01, sceneR * 1e-6, sceneR / 500);
+  const far = d + sceneR * 100;
+  if (Math.abs(near - persp.near) > persp.near * 0.05 || Math.abs(far - persp.far) > persp.far * 0.05) {
+    persp.near = near; persp.far = far;
+    persp.updateProjectionMatrix();
+  }
+}
+
 function setView(name) {
   const dir = name === 'fit'
     ? camera.position.clone().sub(controls.target).normalize()
@@ -416,9 +468,9 @@ function setView(name) {
   controls.target.copy(c);
 
   const d = (r / Math.sin(THREE.MathUtils.degToRad(persp.fov / 2)) / narrow) * 1.05;
+  sceneR = r;
   persp.position.copy(c).addScaledVector(dir, d);
-  persp.near = r / 500; persp.far = r * 500;
-  persp.updateProjectionMatrix();
+  fitClipPlanes();
 
   orthoHalfH = (r / narrow) * 1.05;
   ortho.zoom = 1;
@@ -450,6 +502,7 @@ function setOrtho(on) {
     const d = orthoHalfH / ortho.zoom / halfFov;
     persp.position.copy(t).addScaledVector(dir, d);
     camera = persp;
+    fitClipPlanes();
   }
   camera.lookAt(t);
   controls.object = camera;
@@ -902,6 +955,24 @@ $('mShot').addEventListener('click', screenshot);
 $('mTitle').addEventListener('click', () => setSheet(true));
 canvas.addEventListener('pointerdown', () => { if (!viewMenu.hidden) setViewMenu(false); });
 
+// Точка обертання — на глибині об'єктів під курсором перед зумом (коліщатко), зсувом (ПКМ)
+// і жестом двома пальцями; capture — щоб спрацювати раніше за OrbitControls
+canvas.addEventListener('wheel', (e) => retargetAt(e.clientX, e.clientY), { capture: true, passive: true });
+const touchPts = new Map();
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') touchPts.set(e.pointerId, e);
+  else if (e.button === 2) retargetAt(e.clientX, e.clientY);
+}, { capture: true });
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'touch' || !touchPts.has(e.pointerId)) return;
+  touchPts.set(e.pointerId, e);
+  if (touchPts.size === 2) {
+    const [a, b] = [...touchPts.values()];
+    retargetAt((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+  }
+}, { capture: true });
+for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, (e) => touchPts.delete(e.pointerId), { capture: true });
+
 const bindCheck = (id, key, rebuild) => $(id).addEventListener('change', (e) => {
   state[key] = e.target.checked;
   if (rebuild === 'scene') rebuildScene(); else if (rebuild === 'grid') rebuildGrid();
@@ -984,6 +1055,7 @@ function loop() {
   requestAnimationFrame(loop);
   controls.update();
   if (!needsRender) return;
+  if (camera === persp) fitClipPlanes();
   needsRender = false;
   renderer.render(scene, camera);
   drawOverlay();
@@ -1008,4 +1080,4 @@ resize();
 loop();
 
 // Для автоматизованої перевірки / вбудовування: відкрити файл із масиву байтів.
-window.cpzViewer = { open: (name, bytes) => openInputs([{ name, data: bytes }]), state };
+window.cpzViewer = { open: (name, bytes) => openInputs([{ name, data: bytes }]), state, controls, get camera() { return camera; } };
