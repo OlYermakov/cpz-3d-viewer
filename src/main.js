@@ -507,7 +507,6 @@ function setOrtho(on) {
   camera.lookAt(t);
   controls.object = camera;
   controls.update();
-  for (const id of ['btnOrtho', 'mOrtho']) $(id).classList.toggle('on', on);
   requestRender();
 }
 
@@ -935,7 +934,6 @@ function setMeasure(on) {
 }
 
 document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
-$('btnOrtho').addEventListener('click', () => setOrtho(!state.ortho));
 $('btnMeasure').addEventListener('click', () => setMeasure(!state.measure));
 $('btnClearInfo').addEventListener('click', () => { if (state.measure) setMeasure(false); state.selected = null; updateInfo(); updateStatus(); requestRender(); });
 $('btnAllOn').addEventListener('click', () => { for (const L of state.model.layerList) setLayerVisible(L, true); syncLayerChecks(); });
@@ -949,7 +947,6 @@ const setViewMenu = (open) => { viewMenu.hidden = !open; $('mView').classList.to
 $('mView').addEventListener('click', () => setViewMenu(viewMenu.hidden));
 viewMenu.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setViewMenu(false)));
 $('mFit').addEventListener('click', () => setView('fit'));
-$('mOrtho').addEventListener('click', () => setOrtho(!state.ortho));
 $('mMeasure').addEventListener('click', () => setMeasure(!state.measure));
 $('mShot').addEventListener('click', screenshot);
 $('mTitle').addEventListener('click', () => setSheet(true));

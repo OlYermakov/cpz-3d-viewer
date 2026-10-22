@@ -30,7 +30,7 @@ export default {
 <ul>
   <li><b>Миша:</b> ліва кнопка — обертання, права — зсув, коліщатко — масштаб до курсора.</li>
   <li><b>Дотики:</b> один палець — обертання, два — масштаб і зсув.</li>
-  <li><b>Види:</b> Зверху, Спереду (з півдня), Збоку (зі сходу), Ізо. «Вписати» показує всі видимі шари, «Орто» — вигляд без перспективи, зручний для плану.</li>
+  <li><b>Види:</b> Зверху, Спереду (з півдня), Збоку (зі сходу), 3D (загальний косий вигляд). «Вписати» показує всі видимі шари. На ПК клавіша <kbd>O</kbd> вмикає вигляд без перспективи — зручно для плану.</li>
   <li>Компас унизу ліворуч: <b>E</b> — схід, <b>N</b> — північ, <b>H</b> — висота.</li>
 </ul>
 
@@ -63,7 +63,7 @@ ${keys([
   [['T 1', 'зверху'], ['M', 'вимірювання']],
   [['2', 'спереду'], ['N', 'назви точок']],
   [['3', 'збоку'], ['H', 'висоти']],
-  [['4', 'ізометрія'], ['Esc', 'скинути / закрити']],
+  [['4', '3D-вигляд'], ['Esc', 'скинути / закрити']],
 ])}
 
 <h3>На телефоні</h3>
@@ -102,7 +102,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 <ul>
   <li><b>Maus:</b> linke Taste — drehen, rechte — verschieben, Mausrad — zoomen zum Cursor.</li>
   <li><b>Touch:</b> ein Finger — drehen, zwei — zoomen und verschieben.</li>
-  <li><b>Ansichten:</b> Oben, Vorne (von Süden), Seite (von Osten), Iso. „Einpassen“ zeigt alle sichtbaren Ebenen, „Ortho“ — Ansicht ohne Perspektive, ideal für den Lageplan.</li>
+  <li><b>Ansichten:</b> Oben, Vorne (von Süden), Seite (von Osten), 3D (schräge Gesamtansicht). „Einpassen“ zeigt alle sichtbaren Ebenen. Am PC schaltet die Taste <kbd>O</kbd> die Ansicht ohne Perspektive ein — ideal für den Lageplan.</li>
   <li>Kompass unten links: <b>E</b> — Osten, <b>N</b> — Norden, <b>H</b> — Höhe.</li>
 </ul>
 
@@ -135,7 +135,7 @@ ${keys([
   [['T 1', 'Draufsicht'], ['M', 'messen']],
   [['2', 'vorne'], ['N', 'Punktnamen']],
   [['3', 'Seite'], ['H', 'Höhen']],
-  [['4', 'Isometrie'], ['Esc', 'zurücksetzen / schließen']],
+  [['4', '3D-Ansicht'], ['Esc', 'zurücksetzen / schließen']],
 ])}
 
 <h3>Auf dem Smartphone</h3>
@@ -174,7 +174,7 @@ Files are processed only on your device and are never uploaded.</p>
 <ul>
   <li><b>Mouse:</b> left button — rotate, right — pan, wheel — zoom to cursor.</li>
   <li><b>Touch:</b> one finger — rotate, two — zoom and pan.</li>
-  <li><b>Views:</b> Top, Front (from the south), Side (from the east), Iso. “Fit” frames all visible layers, “Ortho” — no perspective, handy for plan view.</li>
+  <li><b>Views:</b> Top, Front (from the south), Side (from the east), 3D (oblique overview). “Fit” frames all visible layers. On a PC the <kbd>O</kbd> key switches to a view without perspective — handy for plan view.</li>
   <li>Compass bottom left: <b>E</b> — east, <b>N</b> — north, <b>H</b> — height.</li>
 </ul>
 
@@ -207,7 +207,7 @@ ${keys([
   [['T 1', 'top'], ['M', 'measure']],
   [['2', 'front'], ['N', 'point names']],
   [['3', 'side'], ['H', 'heights']],
-  [['4', 'isometric'], ['Esc', 'reset / close']],
+  [['4', '3D view'], ['Esc', 'reset / close']],
 ])}
 
 <h3>On a phone</h3>
