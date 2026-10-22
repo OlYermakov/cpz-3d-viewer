@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { loadProject } from './cpz.js';
 import { t, getLang, setLang, applyI18n } from './i18n.js';
 import { objName, objColor } from './objtypes.js';
@@ -12,6 +12,7 @@ import { objName, objColor } from './objtypes.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (v, d = 3) => (v == null || Number.isNaN(v) ? '—' : v.toFixed(d));
+const ptName = (p) => p.name || '—'; // вершини DXF не мають назв
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const FALLBACK_COLORS = [0xff5555, 0x55ff55, 0x5599ff, 0xffff55, 0xff55ff, 0x55ffff, 0xffaa33, 0xaa77ff];
@@ -21,7 +22,7 @@ const layerLabel = (id) => { const n = objName(id); return n ? `${id} · ${n}` :
 
 const state = {
   model: null,
-  showLines: true, showPoints: true, showLabels: false, showHeights: false,
+  showLines: true, showPoints: true, showLabels: false, showHeights: false, showTexts: true,
   showGrid: true, show2D: true, showDrop: false,
   colorMode: 'layer', zScale: 1, lineWidth: 2, pointSize: 6,
   theme: 'dark', ortho: false, measure: false,
@@ -111,7 +112,8 @@ function displayColor(rgb) {
 
 function heightColor(z) {
   const M = state.model;
-  const t = M.zRange > 0 ? (z - M.minZ) / M.zRange : 0.5;
+  const span = M.fit.z1 - M.fit.z0;
+  const t = span > 0 ? Math.min(1, Math.max(0, (z - M.fit.z0) / span)) : 0.5;
   return new THREE.Color().setHSL(0.66 * (1 - t), 0.85, state.theme === 'dark' ? 0.55 : 0.45);
 }
 
@@ -128,32 +130,38 @@ function buildModel(project) {
         color: base?.color ?? objColor(id) ?? FALLBACK_COLORS[layers.size % FALLBACK_COLORS.length],
         visible: base?.visible ?? true,
         width: base?.width ?? 1,
-        lines: [], points: [], nPts: 0,
+        lines: [], points: [], texts: [], nPts: 0,
       });
     }
     return layers.get(id);
   };
 
+  const texts = project.texts ?? [];
   const all = [...project.points, ...project.lines.flatMap((l) => l.pts)];
-  const realZ = all.filter((p) => p.z != null && p.z !== 0).map((p) => p.z);
-  const hasRealZ = realZ.length > 0;
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  for (const p of all) {
-    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
-  }
-  const minZ = hasRealZ ? Math.min(...realZ) : 0;
-  const maxZ = hasRealZ ? Math.max(...realZ) : 0;
-  const origin = { x: Math.round((minX + maxX) / 2), y: Math.round((minY + maxY) / 2), z: minZ };
+  const xs = [], ys = [], zs = [];
+  for (const p of [...all, ...texts]) { xs.push(p.x); ys.push(p.y); if (p.z != null && p.z !== 0) zs.push(p.z); }
+  const hasRealZ = zs.length > 0;
+  // Межі: повні (для інформації) і «стійкі» без 0,5 % крайніх значень — щоб одиничні об'єкти
+  // далеко від креслення (рамка, легенда в нулі координат) не зменшували модель при «Вписати»
+  const range = (arr) => {
+    if (!arr.length) return { min: 0, max: 0, lo: 0, hi: 0 };
+    const s = Float64Array.from(arr).sort(), k = arr.length > 200 ? Math.floor(arr.length * 0.005) : 0;
+    return { min: s[0], max: s[s.length - 1], lo: s[k], hi: s[s.length - 1 - k] };
+  };
+  const rx = range(xs), ry = range(ys), rz = range(zs);
+  const minX = rx.min, maxX = rx.max, minY = ry.min, maxY = ry.max, minZ = rz.min, maxZ = rz.max;
+  const fit = { x0: rx.lo, x1: rx.hi, y0: ry.lo, y1: ry.hi, z0: rz.lo, z1: rz.hi };
+  const origin = { x: Math.round((fit.x0 + fit.x1) / 2), y: Math.round((fit.y0 + fit.y1) / 2), z: fit.z0 };
 
-  // Точка без висоти: висота відсутня або рівно 0 серед 3D-даних (напр. QuickLn у CAPLAN).
+  // Точка без висоти: висота відсутня або рівно 0 серед 3D-даних (напр. QuickLn у CAPLAN, підписи в DXF).
   const noZ = (p) => p.z == null || (hasRealZ && p.z === 0);
-  for (const p of all) {
+  for (const p of [...all, ...texts]) {
     p.noZ = noZ(p);
     p.lx = p.x - origin.x; p.ly = p.y - origin.y; p.lz = p.noZ ? 0 : p.z - origin.z;
   }
 
   for (const p of project.points) { const L = getLayer(p.layer); L.points.push(p); L.nPts++; }
+  for (const x of texts) { const L = getLayer(x.layer); L.texts.push(x); }
   for (const line of project.lines) {
     const L = getLayer(line.layer);
     line.is2D = line.pts.every((p) => p.noZ);
@@ -165,16 +173,17 @@ function buildModel(project) {
       l3 += a.noZ || b.noZ ? NaN : Math.hypot(h, b.z - a.z);
     }
     line.len2D = l2; line.len3D = l3;
-    line.closed = line.pts.length > 2 && line.pts[0].name === line.pts.at(-1).name;
+    // DXF задає замкненість прапорцем; у CPZ замкнена лінія повторює першу точку
+    line.closed ??= line.pts.length > 2 && !!line.pts[0].name && line.pts[0].name === line.pts.at(-1).name;
     L.lines.push(line); L.nPts += line.pts.length;
   }
 
   const layerList = [...layers.values()].sort((a, b) => (parseFloat(a.id) - parseFloat(b.id)) || a.id.localeCompare(b.id));
   return {
-    name: project.name, header: project.header, sources: project.sources,
-    layers, layerList, lines: project.lines, points: project.points,
-    origin, minX, maxX, minY, maxY, minZ, maxZ, zRange: maxZ - minZ, hasRealZ,
-    nPoints: all.length,
+    name: project.name, header: project.header, sources: project.sources, format: project.format,
+    layers, layerList, lines: project.lines, points: project.points, texts,
+    origin, minX, maxX, minY, maxY, minZ, maxZ, zRange: maxZ - minZ, hasRealZ, fit,
+    nPoints: project.points.length + project.lines.reduce((s, l) => s + l.pts.filter((p) => !p.nopick).length, 0),
   };
 }
 
@@ -210,6 +219,7 @@ function rebuildScene() {
     L.group = g;
     modelGroup.add(g);
     const baseColor = displayColor(L.color);
+    L.css = '#' + baseColor.getHexString(); // колір текстів шару на оверлеї
     const vcolor = (p) => (p.noZ ? gray : heightColor(p.z));
 
     const lineMat = new LineMaterial({
@@ -222,27 +232,32 @@ function rebuildScene() {
 
     const ptPos = [], ptCol = [];
     const pushPt = (p, line) => {
-      ptPos.push(p.lx, p.ly, p.lz);
-      if (heightMode) { const c = vcolor(p); ptCol.push(c.r, c.g, c.b); }
-      addPick(p, L, line);
+      // Вершини ліній DXF не малюються точками, але до них можна «прив'язатися» для вимірювання;
+      // точки дуг/кіл/граней (nopick) — лише геометрія
+      if (!p.vertex) {
+        ptPos.push(p.lx, p.ly, p.lz);
+        if (heightMode) { const c = vcolor(p); ptCol.push(c.r, c.g, c.b); }
+      }
+      if (!p.nopick) addPick(p, L, line);
     };
 
+    // Усі лінії шару — одним об'єктом (відрізками): тисячі полілiній DXF без втрати швидкості
+    const segPos = [], segCol = [];
     for (const line of L.lines) {
       if (line.is2D && !state.show2D) continue;
-      const pos = [], cols = [];
-      for (const p of line.pts) {
-        pos.push(p.lx, p.ly, p.lz);
-        if (heightMode) { const c = vcolor(p); cols.push(c.r, c.g, c.b); }
+      line.pts.forEach((p, k) => {
         pushPt(p, line);
-      }
-      if (line.pts.length >= 2 && state.showLines) {
-        const geo = new LineGeometry();
-        geo.setPositions(pos);
-        if (heightMode) geo.setColors(cols);
-        const obj = new Line2(geo, lineMat);
-        obj.computeLineDistances();
-        g.add(obj);
-      }
+        if (k === 0 || !state.showLines) return;
+        const a = line.pts[k - 1];
+        segPos.push(a.lx, a.ly, a.lz, p.lx, p.ly, p.lz);
+        if (heightMode) { const ca = vcolor(a), cb = vcolor(p); segCol.push(ca.r, ca.g, ca.b, cb.r, cb.g, cb.b); }
+      });
+    }
+    if (segPos.length) {
+      const geo = new LineSegmentsGeometry();
+      geo.setPositions(segPos);
+      if (heightMode) geo.setColors(segCol);
+      g.add(new LineSegments2(geo, lineMat));
     }
     for (const p of L.points) {
       if (p.noZ && !state.show2D) continue;
@@ -289,16 +304,16 @@ function rebuildGrid() {
   if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); grid = null; }
   const M = state.model;
   if (!M || !state.showGrid) return;
-  const span = Math.max(M.maxX - M.minX, M.maxY - M.minY, 1);
+  const span = Math.max(M.fit.x1 - M.fit.x0, M.fit.y1 - M.fit.y0, 1);
   const step = niceStep(span);
-  const div = Math.ceil((span * 1.4) / step / 2) * 2;
+  const div = Math.min(400, Math.ceil((span * 1.4) / step / 2) * 2);
   const dark = state.theme === 'dark';
   grid = new THREE.GridHelper(div * step, div, dark ? 0x1d6f93 : 0x8cc4dc, dark ? 0x0f3a50 : 0xc4e0ec);
   grid.material.transparent = true;
   grid.material.opacity = dark ? 0.75 : 0.9;
   grid.rotation.x = Math.PI / 2; // XZ → XY
   // Вузли сітки на «круглих» координатах
-  const cx = (M.minX + M.maxX) / 2, cy = (M.minY + M.maxY) / 2;
+  const cx = (M.fit.x0 + M.fit.x1) / 2, cy = (M.fit.y0 + M.fit.y1) / 2;
   grid.position.set(Math.round(cx / step) * step - M.origin.x, Math.round(cy / step) * step - M.origin.y, 0);
   grid.userData.step = step;
   scene.add(grid);
@@ -306,12 +321,27 @@ function rebuildGrid() {
 
 // ---------------------------------------------------------------- Камера
 
+// Межі для «Вписати»: лише видимі шари, без 0,5 % крайніх точок (одиничні об'єкти далеко від креслення)
 function modelBox() {
-  const b = new THREE.Box3();
-  const v = new THREE.Vector3();
-  for (const p of pickPts) b.expandByPoint(v.set(p.lx, p.ly, p.lz * state.zScale));
-  if (b.isEmpty()) b.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 5));
-  return b;
+  const M = state.model;
+  const fallback = new THREE.Box3(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 5));
+  if (!M) return fallback;
+  const xs = [], ys = [], zs = [];
+  const take = (p) => { xs.push(p.lx); ys.push(p.ly); zs.push(p.lz); };
+  // Уся геометрія видимих шарів (у т. ч. грані DGM, дуги), для великих креслень — з проріджуванням
+  const vis = M.layerList.filter((L) => L.visible);
+  const total = vis.reduce((s, L) => s + L.nPts + L.texts.length, 0);
+  const step = Math.max(1, Math.ceil(total / 300000));
+  let n = 0;
+  const maybe = (p) => { if (n++ % step === 0 && !(p.noZ && !state.show2D)) take(p); };
+  for (const L of vis) { L.points.forEach(maybe); L.texts.forEach(maybe); for (const l of L.lines) l.pts.forEach(maybe); }
+  if (!xs.length) return fallback;
+  const cut = (arr) => {
+    const s = Float64Array.from(arr).sort(), k = arr.length > 200 ? Math.floor(arr.length * 0.005) : 0;
+    return [s[k], s[s.length - 1 - k]];
+  };
+  const [x0, x1] = cut(xs), [y0, y1] = cut(ys), [z0, z1] = cut(zs);
+  return new THREE.Box3(new THREE.Vector3(x0, y0, z0 * state.zScale), new THREE.Vector3(x1, y1, z1 * state.zScale));
 }
 
 const VIEW_DIRS = {
@@ -400,32 +430,56 @@ function drawOverlay() {
     screenPts.push({ p, ...s });
   }
 
-  // Підписи (без накладання: сітка зайнятості)
+  // Підписи без накладання: сітка зайнятості спільна для текстів креслення й назв точок
+  const cell = 6, cols = Math.ceil(vw / cell) + 1;
+  const occ = new Uint8Array(cols * (Math.ceil(vh / cell) + 1));
+  const halo = dark ? 'rgba(2,12,18,.85)' : 'rgba(240,248,252,.92)';
+  const place = (text, x0, y0, w, h, fill) => {
+    const c0 = Math.max(0, Math.floor(x0 / cell)), c1 = Math.floor((x0 + w) / cell);
+    const r0 = Math.max(0, Math.floor(y0 / cell)), r1 = Math.floor((y0 + h) / cell);
+    if (x0 + w < 0 || c1 >= cols || y0 < 0 || y0 + h > vh) return;
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (occ[r * cols + c]) return;
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) occ[r * cols + c] = 1;
+    ctx.lineWidth = 3; ctx.strokeStyle = halo; ctx.strokeText(text, x0 + 2, y0 + h / 2);
+    ctx.fillStyle = fill; ctx.fillText(text, x0 + 2, y0 + h / 2);
+  };
+  ctx.textBaseline = 'middle';
+
+  // Тексти креслення (DXF): розмір за висотою тексту в кресленні, дрібні при віддаленні ховаються
+  if (state.showTexts && state.model.texts.length) {
+    let drawn = 0;
+    for (const L of state.model.layerList) {
+      if (!L.visible || !L.texts.length) continue;
+      for (const tx of L.texts) {
+        if (tx.noZ && !state.show2D) continue;
+        const s = project(tx);
+        if (!s || s.x < -200 || s.y < -50 || s.x > vw + 50 || s.y > vh + 50) continue;
+        let px = 11;
+        if (tx.h > 0) {
+          const s2 = project({ lx: tx.lx + tx.h, ly: tx.ly, lz: tx.lz });
+          px = s2 ? Math.hypot(s2.x - s.x, s2.y - s.y) : 0;
+          if (px < 7) continue;
+          px = Math.min(px, 22);
+        }
+        ctx.font = `${Math.round(px)}px "Segoe UI", system-ui, sans-serif`;
+        const w = ctx.measureText(tx.text).width + 4;
+        place(tx.text, s.x - 2, s.y - px, w, px + 2, L.css);
+        if (++drawn > 3000) break;
+      }
+    }
+  }
+
   if ((state.showLabels || state.showHeights) && screenPts.length < 5000) {
     ctx.font = '11px "Segoe UI", system-ui, sans-serif';
-    ctx.textBaseline = 'middle';
-    const cell = 6, cols = Math.ceil(vw / cell) + 1;
-    const occ = new Uint8Array(cols * (Math.ceil(vh / cell) + 1));
     const sorted = [...screenPts].sort((a, b) => a.z - b.z);
     for (const s of sorted) {
       const parts = [];
-      if (state.showLabels) parts.push(s.p.name);
+      if (state.showLabels && s.p.name) parts.push(s.p.name);
       if (state.showHeights) parts.push(s.p.noZ ? '—' : s.p.z.toFixed(2));
+      if (!parts.length) continue;
       const text = parts.join('  ');
       const w = ctx.measureText(text).width + 4, h = 13;
-      const x0 = s.x + 6, y0 = s.y - h / 2 - 6;
-      const c0 = Math.max(0, Math.floor(x0 / cell)), c1 = Math.floor((x0 + w) / cell);
-      const r0 = Math.max(0, Math.floor(y0 / cell)), r1 = Math.floor((y0 + h) / cell);
-      if (c1 >= cols || y0 + h > vh) continue;
-      let free = true;
-      for (let r = r0; r <= r1 && free; r++) for (let c = c0; c <= c1; c++) if (occ[r * cols + c]) { free = false; break; }
-      if (!free) continue;
-      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) occ[r * cols + c] = 1;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = dark ? 'rgba(2,12,18,.85)' : 'rgba(240,248,252,.92)';
-      ctx.strokeText(text, x0 + 2, y0 + h / 2);
-      ctx.fillStyle = dark ? '#bfe6f5' : '#0e3a52';
-      ctx.fillText(text, x0 + 2, y0 + h / 2);
+      place(text, s.x + 6, s.y - h / 2 - 6, w, h, dark ? '#bfe6f5' : '#0e3a52');
     }
   }
 
@@ -540,12 +594,12 @@ function measure(a, b) {
 }
 
 function pointRows(p) {
-  return `<dt>${t('pt.name')}</dt><dd><b>${esc(p.name)}</b></dd>
+  return `<dt>${t('pt.name')}</dt><dd><b>${esc(ptName(p))}</b></dd>
     <dt>${t('pt.layer')}</dt><dd>${esc(layerLabel(p.layer))}</dd>
     <dt>Rechtswert (E)</dt><dd>${fmt(p.x, 4)}</dd>
     <dt>Hochwert (N)</dt><dd>${fmt(p.y, 4)}</dd>
     <dt>Höhe (H)</dt><dd>${p.noZ ? `<span class="muted">${t('pt.noHeight')}</span>` : fmt(p.z, 4)}</dd>
-    <dt>W</dt><dd>${p.code}</dd>
+    ${p.code != null ? `<dt>W</dt><dd>${p.code}</dd>` : ''}
     ${p.attrs?.filter(Boolean).length ? `<dt>${t('pt.attrs')}</dt><dd>${esc(p.attrs.filter(Boolean).join(' | '))}</dd>` : ''}`;
 }
 
@@ -560,9 +614,9 @@ function updateInfo() {
     $('infoTitle').textContent = t('sec.measure');
     const [a, b] = state.measurePts;
     if (!a) { info.innerHTML = `<div class="muted">${act('m.first')}</div>`; return; }
-    if (!b) { info.innerHTML = `<div>A: <b>${esc(a.name)}</b></div><div class="muted">${act('m.second')}</div>`; return; }
+    if (!b) { info.innerHTML = `<div>A: <b>${esc(ptName(a))}</b></div><div class="muted">${act('m.second')}</div>`; return; }
     const m = measure(a, b);
-    info.innerHTML = `<div style="margin-bottom:6px"><b>${esc(a.name)}</b> → <b>${esc(b.name)}</b></div>
+    info.innerHTML = `<div style="margin-bottom:6px"><b>${esc(ptName(a))}</b> → <b>${esc(ptName(b))}</b></div>
       <div class="res">${fmt(m.slope)} ${u}</div>
       <dl class="kv" style="margin-top:6px">
         <dt>${t('m.slope')}</dt><dd>${fmt(m.slope)} ${u}</dd>
@@ -590,12 +644,12 @@ function updateStatus() {
   const [a, b] = state.measurePts;
   const u = t('m');
   if (p) {
-    $('status').textContent = `${p.name}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   ${t('st.layer')} ${layerLabel(p.layer)}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
+    $('status').textContent = `${ptName(p)}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   ${t('st.layer')} ${layerLabel(p.layer)}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
   } else if (state.measure && b) {
     const m = measure(a, b);
-    $('status').textContent = `${a.name} → ${b.name}:  ${fmt(m.slope)} ${u}   ${t('m.horizShort')} ${fmt(m.horiz)} ${u}   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} ${u}`;
+    $('status').textContent = `${ptName(a)} → ${ptName(b)}:  ${fmt(m.slope)} ${u}   ${t('m.horizShort')} ${fmt(m.horiz)} ${u}   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} ${u}`;
   } else if (state.measure) {
-    $('status').textContent = a ? `A: ${a.name} — ${act('m.second')}` : act('m.two');
+    $('status').textContent = a ? `A: ${ptName(a)} — ${act('m.second')}` : act('m.two');
   } else if (state.model) {
     const base = `${state.model.name}  ·  ${pickPts.length} ${t('st.points')}  ·  ${state.model.lines.length} ${t('st.lines')}`;
     $('status').textContent = `${base}  ·  ${t(isTouch ? 'st.tap' : 'st.mouse')}`;
@@ -611,8 +665,10 @@ function fillFileInfo() {
     <dt>${t('fi.project')}</dt><dd><b>${esc(M.name)}</b></dd>
     ${gen ? `<dt>${t('fi.created')}</dt><dd>${esc(gen.replace(/^Folgende Daten wurden von\s*/i, '').replace(/\s*erzeugt\.?$/i, ''))}</dd>` : ''}
     <dt>${t('fi.files')}</dt><dd>${esc(M.sources.join(', '))}</dd>
+    ${M.format && M.format !== 'CPZ' ? `<dt>${t('fi.format')}</dt><dd>${esc(M.format)}</dd>` : ''}
     <dt>${t('fi.points')}</dt><dd>${M.nPoints} (${M.points.length} ${t('fi.standalone')})</dd>
     <dt>${t('fi.lines')}</dt><dd>${M.lines.length}</dd>
+    ${M.texts.length ? `<dt>${t('fi.texts')}</dt><dd>${M.texts.length}</dd>` : ''}
     <dt>${t('fi.layers')}</dt><dd>${M.layerList.length}</dd>
     <dt>E</dt><dd>${fmt(M.minX, 2)} … ${fmt(M.maxX, 2)}</dd>
     <dt>N</dt><dd>${fmt(M.minY, 2)} … ${fmt(M.maxY, 2)}</dd>
@@ -761,6 +817,7 @@ bindCheck('optLines', 'showLines', 'scene');
 bindCheck('optPoints', 'showPoints', 'scene');
 bindCheck('optLabels', 'showLabels');
 bindCheck('optHeights', 'showHeights');
+bindCheck('optTexts', 'showTexts');
 bindCheck('optGrid', 'showGrid', 'grid');
 bindCheck('opt2D', 'show2D', 'scene');
 bindCheck('optDrop', 'showDrop', 'scene');
