@@ -1,0 +1,18 @@
+{
+  "name": "cpz-3d-viewer",
+  "version": "1.0.0",
+  "description": "3D-переглядач креслень CAPLAN (Cremer) у форматі CPZ",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "serve": "esbuild --servedir=dist --serve=5173"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0"
+  }
+}

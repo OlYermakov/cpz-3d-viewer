@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03141c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CPZ 3D Viewer</title>
+<style>
+  :root {
+    --bg0: #010507; --bg1: #03141c; --glow: rgba(0, 150, 205, .32); --glow2: rgba(0, 95, 160, .22);
+    --glass: linear-gradient(160deg, rgba(22, 120, 170, .26) 0%, rgba(8, 48, 80, .38) 45%, rgba(3, 18, 30, .62) 100%);
+    --glass-solid: rgba(6, 30, 46, .72);
+    --edge: rgba(110, 205, 245, .20); --edge-hi: rgba(150, 225, 255, .38);
+    --text: #e4f3fa; --muted: #7fa6b8; --accent: #2cc2f2; --accent-deep: #0a6fb0; --pill: #b9e8f7;
+    --hover: rgba(90, 200, 245, .10); --danger: #ff7b85;
+    --shadow: 0 18px 50px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(170, 230, 255, .14);
+  }
+  :root[data-theme="light"] {
+    --bg0: #e9f3f8; --bg1: #d7e9f2; --glow: rgba(40, 175, 230, .30); --glow2: rgba(20, 110, 180, .18);
+    --glass: linear-gradient(160deg, rgba(255, 255, 255, .78) 0%, rgba(225, 242, 250, .70) 55%, rgba(205, 230, 243, .74) 100%);
+    --glass-solid: rgba(240, 248, 252, .85);
+    --edge: rgba(20, 120, 170, .18); --edge-hi: rgba(20, 140, 200, .35);
+    --text: #0b2635; --muted: #557a8c; --accent: #0b9fd8; --accent-deep: #0a5f99; --pill: #0b7fb6;
+    --hover: rgba(20, 140, 200, .08);
+    --shadow: 0 16px 40px rgba(20, 70, 100, .16), inset 0 1px 0 rgba(255, 255, 255, .8);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; color: var(--text); overflow: hidden;
+    font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+  body {
+    background:
+      radial-gradient(900px 620px at 72% 18%, var(--glow), transparent 65%),
+      radial-gradient(700px 520px at 20% 85%, var(--glow2), transparent 70%),
+      linear-gradient(180deg, var(--bg1), var(--bg0));
+  }
+  :root[data-theme="light"] body { background: var(--bg0); }
+  #app { display: flex; height: 100%; padding: 12px; gap: 12px; }
+
+  .glass { background: var(--glass); border: 1px solid var(--edge); border-radius: 20px;
+    box-shadow: var(--shadow); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); }
+
+  /* ---------- Бокова панель ---------- */
+  aside { width: 304px; min-width: 304px; display: flex; flex-direction: column; overflow: hidden; }
+  aside header { padding: 16px 16px 14px; border-bottom: 1px solid var(--edge); }
+  .brand { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
+  .brand svg { flex: none; filter: drop-shadow(0 0 10px rgba(44, 194, 242, .45)); }
+  .brand h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+  .brand p { margin: 0; font-size: 11px; color: var(--muted); }
+  .scroll { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: rgba(110, 205, 245, .25) transparent; }
+  section { padding: 12px 16px; border-bottom: 1px solid var(--edge); }
+  section:last-child { border-bottom: none; }
+  section h2 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted);
+    margin: 0 0 9px; font-weight: 650; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+
+  button { font: inherit; color: var(--text); background: rgba(120, 210, 250, .06); border: 1px solid var(--edge);
+    border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: background .15s, border-color .15s, box-shadow .15s; }
+  button:hover { border-color: var(--edge-hi); background: var(--hover); }
+  button.primary { width: 100%; padding: 10px; font-weight: 600; color: #fff; border: 1px solid rgba(160, 230, 255, .45);
+    background: linear-gradient(135deg, #34c8f5 0%, #1191d0 45%, var(--accent-deep) 100%);
+    box-shadow: 0 0 22px rgba(44, 194, 242, .35), inset 0 1px 0 rgba(255, 255, 255, .35); }
+  button.primary:hover { box-shadow: 0 0 32px rgba(44, 194, 242, .55), inset 0 1px 0 rgba(255, 255, 255, .45); }
+  button.on { color: #fff; border-color: rgba(160, 230, 255, .5);
+    background: linear-gradient(135deg, #2cc2f2, var(--accent-deep)); box-shadow: 0 0 16px rgba(44, 194, 242, .4); }
+  button.mini { padding: 1px 9px; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-variant-numeric: tabular-nums; margin: 0; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; word-break: break-word; }
+  .muted { color: var(--muted); }
+
+  .layer { display: flex; align-items: center; gap: 9px; padding: 4px 8px; border-radius: 10px; cursor: pointer; user-select: none; }
+  .layer:hover { background: var(--hover); }
+  .layer input { margin: 0; }
+  .sw { width: 22px; height: 6px; border-radius: 999px; flex: none; box-shadow: 0 0 8px currentColor; }
+  .layer .nm { flex: 1; font-variant-numeric: tabular-nums; }
+  .layer .cnt { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+  input[type=range] { accent-color: var(--accent); }
+  .opt { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .opt > span:first-child, .opt > label:first-child { width: 46px; color: var(--muted); }
+  .opt input[type=range] { flex: 1; }
+  .opt .val { width: 30px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .opt select { flex: 1; font: inherit; background: var(--glass-solid); color: var(--text); border: 1px solid var(--edge);
+    border-radius: 999px; padding: 4px 10px; outline: none; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-bottom: 8px; }
+  .checks label { display: flex; gap: 7px; align-items: center; cursor: pointer; }
+
+  #info .res { font-size: 22px; font-weight: 650; color: var(--pill); text-shadow: 0 0 18px rgba(44, 194, 242, .55); }
+  .err { color: var(--danger); margin-top: 8px; }
+  .err:empty { display: none; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  kbd { font: 10.5px ui-monospace, Consolas, monospace; background: rgba(120, 210, 250, .08); border: 1px solid var(--edge);
+    border-radius: 6px; padding: 0 5px; color: var(--text); }
+
+  /* ---------- 3D-вікно ---------- */
+  #viewport { position: relative; flex: 1; overflow: hidden; border-radius: 22px; border: 1px solid var(--edge);
+    background: radial-gradient(120% 90% at 70% 0%, rgba(30, 140, 200, .16), transparent 60%), rgba(0, 8, 12, .35);
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, .45); }
+  :root[data-theme="light"] #viewport { background: #f4f9fb; box-shadow: inset 0 0 60px rgba(20, 90, 130, .08); }
+  #viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #overlay { pointer-events: none; }
+
+  #toolbar { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; flex-wrap: wrap; pointer-events: none; }
+  #toolbar > * { pointer-events: auto; }
+  #toolbar .grp { display: flex; padding: 4px; gap: 2px; border-radius: 999px; }
+  #toolbar .grp button { border: 1px solid transparent; background: transparent; padding: 6px 12px; }
+  #toolbar .grp button:hover { background: var(--hover); border-color: var(--edge); }
+  #toolbar .grp button.on { color: #fff; border-color: rgba(160, 230, 255, .5);
+    background: linear-gradient(135deg, #2cc2f2, var(--accent-deep)); box-shadow: 0 0 16px rgba(44, 194, 242, .45); }
+
+  #status { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; max-width: calc(100% - 200px);
+    padding: 7px 16px; border-radius: 999px; font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Порожній стан ---------- */
+  #drop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  #drop .box { text-align: center; pointer-events: auto; padding: 10px 40px 34px; }
+  #drop .art { width: 380px; max-width: 70vw; height: auto; display: block; margin: 0 auto 6px; }
+  #drop b { display: block; font-size: 20px; font-weight: 650; margin-bottom: 6px; }
+  #drop .sub { color: var(--muted); }
+  #drop .sub small { display: block; margin-top: 4px; font-size: 11px; }
+  #viewport.dragging { border-color: var(--accent); box-shadow: inset 0 0 120px rgba(44, 194, 242, .22), 0 0 30px rgba(44, 194, 242, .25); }
+  #viewport.loaded #drop { display: none; }
+  #viewport:not(.loaded) #status { display: none; }
+
+  button, label, select { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  #drop .btn-open { margin-top: 16px; width: auto; padding: 10px 26px; }
+  .only-mobile { display: none !important; }
+  .hint-touch { display: none; }
+  @media (pointer: coarse) { .hint-touch { display: block; } .hint-mouse { display: none; } }
+
+  /* ---------- Телефон: сцена на весь екран, панель — висувний лист знизу ---------- */
+  @media (max-width: 760px) {
+    .only-mobile { display: inline-flex !important; }
+    .only-desktop { display: none !important; }
+    html, body { height: 100dvh; }
+    #app { padding: 0; gap: 0; }
+    #viewport { position: fixed; inset: 0; border-radius: 0; border: none; }
+
+    aside { position: fixed; z-index: 30; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+      width: auto; min-width: 0; max-height: 74dvh; border-radius: 22px;
+      transform: translateY(calc(100% + 24px)); transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
+    body.sheet-open aside { transform: none; }
+    aside header { padding: 8px 16px 12px; position: relative; }
+    aside header::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px;
+      background: var(--edge-hi); margin: 0 auto 10px; }
+    .brand { margin-bottom: 10px; }
+    #btnCloseSheet { position: absolute; right: 12px; top: 18px; width: 34px; height: 34px; padding: 0;
+      align-items: center; justify-content: center; font-size: 15px; }
+    #scrim { position: fixed; inset: 0; z-index: 25; background: rgba(0, 0, 0, .35); opacity: 0; pointer-events: none; transition: opacity .25s; }
+    body.sheet-open #scrim { opacity: 1; pointer-events: auto; }
+
+    section { padding: 12px 18px; }
+    .layer { padding: 8px; }
+    input[type=checkbox] { width: 18px; height: 18px; }
+    .checks { gap: 8px 8px; }
+    .checks label { min-height: 30px; }
+    .opt { margin: 10px 0; }
+    .opt select, button { min-height: 34px; }
+    button.mini { min-height: 28px; padding: 2px 12px; font-size: 12px; }
+
+    #toolbar { top: calc(8px + env(safe-area-inset-top)); left: 8px; right: 8px; flex-wrap: nowrap; gap: 6px;
+      overflow-x: auto; scrollbar-width: none; padding-bottom: 6px; }
+    #toolbar::-webkit-scrollbar { display: none; }
+    #toolbar .grp { flex: none; padding: 3px; }
+    #toolbar .glass { box-shadow: inset 0 1px 0 rgba(170, 230, 255, .14); } /* тінь обрізалась би прокручуваним контейнером */
+    #toolbar .grp button { padding: 8px 11px; min-height: 36px; }
+    #btnMenu { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; align-items: center; justify-content: center; font-size: 18px; }
+
+    #status { left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); transform: none; max-width: none;
+      white-space: normal; text-align: center; font-size: 12px; padding: 8px 14px; border-radius: 16px; }
+    #drop .box { padding: 10px 20px 60px; }
+    #drop .art { width: 300px; }
+    #drop b { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="glass">
+    <header>
+      <div class="brand">
+        <svg width="38" height="38" viewBox="0 0 48 48" aria-hidden="true">
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fd0ff"/><stop offset="1" stop-color="#0a4f86"/></linearGradient>
+            <linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a9fd8"/><stop offset="1" stop-color="#062d4d"/></linearGradient>
+          </defs>
+          <rect x="17" y="5" width="22" height="30" rx="5" fill="url(#lg2)" transform="rotate(18 28 20)" opacity=".7"/>
+          <rect x="13" y="7" width="22" height="30" rx="5" fill="url(#lg2)" transform="rotate(8 24 22)" opacity=".85"/>
+          <path d="M10 13a5 5 0 0 1 5-5h11l8 8v21a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5z" fill="url(#lg1)"/>
+          <path d="M26 8v5a3 3 0 0 0 3 3h5z" fill="#0a3d66" opacity=".8"/>
+          <rect x="6" y="22" width="15" height="3.4" rx="1.7" fill="#c9f1ff"/>
+          <rect x="6" y="28" width="15" height="3.4" rx="1.7" fill="#c9f1ff" opacity=".85"/>
+          <rect x="6" y="34" width="15" height="3.4" rx="1.7" fill="#c9f1ff" opacity=".7"/>
+        </svg>
+        <div><h1>CPZ 3D Viewer</h1><p>CAPLAN · Cremer</p></div>
+      </div>
+      <button class="only-mobile" id="btnCloseSheet" title="Закрити">✕</button>
+      <button class="primary" id="btnOpen">Відкрити файл…</button>
+      <input type="file" id="fileInput" accept=".cpz,.CPZ,.cp,.l,.kor,.txt" multiple hidden>
+      <div id="loadErr" class="err"></div>
+    </header>
+    <div class="scroll">
+      <section id="secFile" hidden>
+        <h2>Файл</h2>
+        <dl class="kv" id="fileInfo"></dl>
+      </section>
+      <section id="secInfo" hidden>
+        <h2><span id="infoTitle">Точка</span><button class="mini" id="btnClearInfo">✕</button></h2>
+        <div id="info"></div>
+      </section>
+      <section id="secLayers" hidden>
+        <h2>Шари · Objektart
+          <span><button class="mini" id="btnAllOn">усі</button> <button class="mini" id="btnAllOff">жодного</button></span>
+        </h2>
+        <div id="layers"></div>
+        <div class="hint">Подвійний клік — показати лише цей шар</div>
+      </section>
+      <section id="secView" hidden>
+        <h2>Відображення</h2>
+        <div class="checks">
+          <label><input type="checkbox" id="optLines" checked> Лінії</label>
+          <label><input type="checkbox" id="optPoints" checked> Точки</label>
+          <label><input type="checkbox" id="optLabels"> Назви точок</label>
+          <label><input type="checkbox" id="optHeights"> Висоти</label>
+          <label><input type="checkbox" id="optGrid" checked> Сітка</label>
+          <label><input type="checkbox" id="opt2D" checked title="Об'єкти з висотою 0 (без висоти) розміщуються на рівні найнижчої точки"> 2D-об'єкти</label>
+          <label><input type="checkbox" id="optDrop" title="Вертикальні лінії від точок до сітки"> Проєкції</label>
+        </div>
+        <div class="opt"><label for="optColor">Колір</label>
+          <select id="optColor"><option value="layer">за шаром</option><option value="height">за висотою</option></select></div>
+        <div class="opt"><span>Z ×</span><input type="range" id="optZ" min="1" max="10" step="0.5" value="1"><span class="val" id="valZ">1</span></div>
+        <div class="opt"><span>Лінії</span><input type="range" id="optLW" min="1" max="8" step="0.5" value="2"><span class="val" id="valLW">2</span></div>
+        <div class="opt"><span>Точки</span><input type="range" id="optPS" min="2" max="16" step="1" value="6"><span class="val" id="valPS">6</span></div>
+        <div class="opt"><button id="btnTheme" style="flex:1">Світла тема</button></div>
+      </section>
+      <section>
+        <h2>Керування</h2>
+        <div class="muted hint-touch">
+          1 палець — обертання<br>
+          2 пальці — масштаб і зсув<br>
+          Дотик до точки — координати внизу екрана<br>
+          «Виміряти» — торкніться двох точок
+        </div>
+        <div class="muted hint-mouse">
+          ЛКМ — обертання · ПКМ — зсув · коліщатко — масштаб<br>
+          Клік на точці — інформація<br>
+          <kbd>F</kbd> вписати · <kbd>T</kbd> зверху · <kbd>1</kbd>–<kbd>4</kbd> види · <kbd>O</kbd> орто<br>
+          <kbd>M</kbd> вимірювання · <kbd>N</kbd> назви · <kbd>Esc</kbd> скинути
+        </div>
+      </section>
+    </div>
+  </aside>
+  <main id="viewport">
+    <canvas id="gl"></canvas>
+    <canvas id="overlay"></canvas>
+    <div id="drop"><div class="box">
+      <svg class="art" viewBox="40 0 460 300" aria-hidden="true">
+        <defs>
+          <radialGradient id="halo"><stop offset="0" stop-color="#1aa3d8" stop-opacity=".45"/><stop offset="1" stop-color="#1aa3d8" stop-opacity="0"/></radialGradient>
+          <linearGradient id="c1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16a6dc"/><stop offset=".55" stop-color="#0a5d93"/><stop offset="1" stop-color="#041a2c"/></linearGradient>
+          <linearGradient id="c2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e8fc6"/><stop offset=".5" stop-color="#0b4f80"/><stop offset="1" stop-color="#03111d"/></linearGradient>
+          <linearGradient id="cf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a9bc8"/><stop offset=".5" stop-color="#0d6b98"/><stop offset="1" stop-color="#05253b"/></linearGradient>
+          <linearGradient id="curl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3cc3ef"/><stop offset="1" stop-color="#062f4c"/></linearGradient>
+          <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9f6ff"/><stop offset=".55" stop-color="#bfeaf8" stop-opacity=".9"/><stop offset="1" stop-color="#8fd2ea" stop-opacity=".75"/></linearGradient>
+          <filter id="glow" x="-50%" y="-80%" width="200%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+          <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset=".72" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <mask id="fm" maskUnits="userSpaceOnUse" x="0" y="0" width="560" height="300"><rect width="560" height="300" fill="url(#fade)"/></mask>
+        </defs>
+        <ellipse cx="250" cy="160" rx="210" ry="140" fill="url(#halo)"/>
+        <g mask="url(#fm)" stroke="rgba(140,220,255,.35)" stroke-width="1">
+          <rect x="190" y="70" width="150" height="210" rx="18" fill="url(#c2)" transform="rotate(40 230 300)" opacity=".75"/>
+          <rect x="180" y="55" width="150" height="220" rx="18" fill="url(#c2)" transform="rotate(30 230 300)" opacity=".8"/>
+          <rect x="170" y="45" width="150" height="230" rx="18" fill="url(#c1)" transform="rotate(20 230 300)" opacity=".85"/>
+          <rect x="160" y="38" width="150" height="240" rx="18" fill="url(#c1)" transform="rotate(10 230 300)" opacity=".92"/>
+          <rect x="140" y="40" width="150" height="250" rx="18" fill="url(#c2)"/>
+          <path d="M100 82a18 18 0 0 1 18-18h86l46 46v190H100z" fill="url(#cf)"/>
+          <path d="M204 64v30a16 16 0 0 0 16 16h30z" fill="url(#curl)"/>
+        </g>
+        <g>
+          <rect x="72" y="140" width="80" height="16" rx="8" fill="#38c9f5" filter="url(#glow)" opacity=".7"/>
+          <rect x="72" y="140" width="80" height="16" rx="8" fill="url(#bar)"/>
+          <rect x="72" y="172" width="80" height="16" rx="8" fill="#38c9f5" filter="url(#glow)" opacity=".6"/>
+          <rect x="72" y="172" width="80" height="16" rx="8" fill="url(#bar)"/>
+          <rect x="72" y="204" width="80" height="16" rx="8" fill="#38c9f5" filter="url(#glow)" opacity=".5"/>
+          <rect x="72" y="204" width="80" height="16" rx="8" fill="url(#bar)"/>
+        </g>
+      </svg>
+      <b class="only-desktop">Перетягніть сюди файл .CPZ</b>
+      <b class="only-mobile" style="justify-content:center">Відкрийте файл .CPZ</b>
+      <div class="sub"><span class="only-desktop">або натисніть «Відкрити файл…»</span><small>Також підтримуються .CP + .L / .KOR</small></div>
+      <button class="primary btn-open" id="btnOpen2">Відкрити файл…</button>
+    </div></div>
+    <div id="toolbar">
+      <button class="glass only-mobile" id="btnMenu" title="Меню">☰</button>
+      <div class="grp glass">
+        <button data-view="top" title="Вид зверху (T)">Зверху</button>
+        <button data-view="front" title="Вид з півдня (2)">Спереду</button>
+        <button data-view="side" title="Вид зі сходу (3)">Збоку</button>
+        <button data-view="iso" title="Ізометрія (4)">Ізо</button>
+        <button data-view="fit" title="Вписати (F)">⤢ Вписати</button>
+      </div>
+      <div class="grp glass">
+        <button id="btnOrtho" title="Ортогональна проєкція (O)">Орто</button>
+        <button id="btnMeasure" title="Вимірювання між двома точками (M)">Виміряти</button>
+        <button id="btnShot" title="Зберегти зображення PNG">PNG</button>
+      </div>
+    </div>
+    <div id="status" class="glass">Відкрийте файл .CPZ</div>
+  </main>
+  <div id="scrim"></div>
+</div>
+<!--APP_SCRIPT-->
+</body>
+</html>
