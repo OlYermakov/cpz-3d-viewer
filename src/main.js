@@ -859,7 +859,8 @@ const DEVELOPER = 'Oleksii Yermakov';
 const aboutEl = $('about');
 let aboutReturnFocus = null;
 function fillAbout() {
-  $('aboutVer').textContent = `CPZ 3D Viewer · ${t('about.version')} ${__APP_VERSION__} · ${__BUILD_DATE__}`;
+  // Дата збірки — окремим елементом: на телефоні вона прихована (CSS .about-date)
+  $('aboutVer').innerHTML = `CPZ 3D Viewer · ${t('about.version')} ${__APP_VERSION__}<span class="about-date"> · ${__BUILD_DATE__}</span>`;
   $('aboutDev').innerHTML = `<span>${t('about.dev')}:</span> <b>${DEVELOPER}</b>`;
   $('aboutBody').innerHTML = t('about.html');
 }
