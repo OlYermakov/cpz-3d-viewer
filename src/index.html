@@ -56,8 +56,7 @@
   .brand h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: .01em; }
   .brand p { margin: 0; font-size: 11px; color: var(--muted); }
   .brand-text { flex: 1; min-width: 0; }
-  .brand-text h1, .brand-text p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .brand-text h1 { font-size: 15px; }
+  .brand-text h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
   .lang { display: flex; padding: 2px; gap: 1px; border-radius: 999px; border: 1px solid var(--edge); background: rgba(120, 210, 250, .05); flex: none; }
   .lang button { border: 1px solid transparent; background: transparent; padding: 2px 7px; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
   .lang button:hover { color: var(--text); background: var(--hover); }
@@ -262,7 +261,7 @@
     <header>
       <div class="brand">
         <button class="brand-btn" id="btnAbout" data-i18n-title="about.title"><!--BRAND_SVG--></button>
-        <div class="brand-text"><h1>CPZ 3D Viewer</h1><p>CAPLAN · Cremer</p></div>
+        <div class="brand-text"><h1>CPZ 3D Viewer</h1></div>
         <div class="lang" role="group" data-i18n-title="lang">
           <button data-lang="uk">UA</button><button data-lang="de">DE</button><button data-lang="en">EN</button>
         </div>
