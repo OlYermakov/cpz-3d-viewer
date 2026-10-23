@@ -254,6 +254,15 @@
     #drop .art { width: 300px; }
     #drop b { font-size: 18px; }
   }
+  /* Застосунок із головного екрана iOS (status bar black-translucent): сторінка починається під
+     рядком стану, але 100% і position:fixed рахуються від висоти, коротшої на цей рядок, — знизу
+     лишалася порожня смуга. Тут 100vh — повна висота екрана, тож розтягуємо шари до неї */
+  @media (max-width: 760px) and (display-mode: standalone) {
+    html, body, #app { height: 100vh; }
+    #viewport, #scrim, .modal { bottom: auto; height: 100vh; }
+    .modal-card { height: 100vh; }
+    aside { bottom: calc(8px + env(safe-area-inset-bottom) + 100% - 100vh); }
+  }
 </style>
 </head>
 <body>
