@@ -74,7 +74,7 @@ ${keys([
   <li>У меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою (для роботи потрібен інтернет).</li>
 </ul>
 
-<p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.<br>Читання DWG: LibreDWG (GNU GPL v3).</p>`,
+<p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.<br>Ліцензія: GNU GPL v3 · вихідний код: <a href="https://github.com/OlYermakov/cpz-3d-viewer" target="_blank" rel="noopener">github.com/OlYermakov/cpz-3d-viewer</a><br>Читання DWG: LibreDWG (GNU GPL v3). Каталог Objektart — не під GPL.</p>`,
   },
 
   de: {
@@ -148,7 +148,7 @@ ${keys([
   <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol (Internetverbindung erforderlich).</li>
 </ul>
 
-<p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.<br>DWG-Lesen: LibreDWG (GNU GPL v3).</p>`,
+<p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.<br>Lizenz: GNU GPL v3 · Quellcode: <a href="https://github.com/OlYermakov/cpz-3d-viewer" target="_blank" rel="noopener">github.com/OlYermakov/cpz-3d-viewer</a><br>DWG-Lesen: LibreDWG (GNU GPL v3). Objektartenkatalog — nicht unter GPL.</p>`,
   },
 
   en: {
@@ -222,6 +222,6 @@ ${keys([
   <li>Choose “Add to Home screen” in the browser menu — the app gets its own icon (an internet connection is required).</li>
 </ul>
 
-<p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.<br>DWG reading: LibreDWG (GNU GPL v3).</p>`,
+<p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.<br>License: GNU GPL v3 · source code: <a href="https://github.com/OlYermakov/cpz-3d-viewer" target="_blank" rel="noopener">github.com/OlYermakov/cpz-3d-viewer</a><br>DWG reading: LibreDWG (GNU GPL v3). Objektart catalog — not under GPL.</p>`,
   },
 };
