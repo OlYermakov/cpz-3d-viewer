@@ -309,29 +309,15 @@ for (const [l, a] of Object.entries(about)) {
 }
 
 export const LANGS = ['uk', 'de', 'en'];
-const STORAGE_KEY = 'cpz-viewer-lang';
 
-function detect() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (LANGS.includes(saved)) return saved;
-  } catch { /* приватний режим / заборонене сховище */ }
-  for (const l of navigator.languages ?? [navigator.language]) {
-    const code = String(l).slice(0, 2).toLowerCase();
-    if (LANGS.includes(code)) return code;
-    if (code === 'ru' || code === 'be') return 'uk';
-  }
-  return 'en';
-}
-
-let lang = detect();
+// Застосунок завжди відкривається німецькою; українська й англійська — лише перемикачем UA · DE · EN
+// (вибір діє до перезавантаження сторінки і не запам'ятовується).
+let lang = 'de';
 
 export const getLang = () => lang;
 
 export function setLang(l) {
-  if (!LANGS.includes(l)) return;
-  lang = l;
-  try { localStorage.setItem(STORAGE_KEY, l); } catch { /* не критично */ }
+  if (LANGS.includes(l)) lang = l;
 }
 
 export function t(key, vars) {
