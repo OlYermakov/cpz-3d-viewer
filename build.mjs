@@ -26,7 +26,21 @@ async function emit(result) {
     .replace('<!--ABOUT_ICON-->', () => aboutIcon)
     .replace('<!--APP_SCRIPT-->', () => `<script>${js}</script>`));
   await cp('public', 'dist', { recursive: true });
-  console.log(`dist/CPZ-Viewer.html (${(js.length / 1024).toFixed(0)} KB JS) + public/`);
+  // DWG: фоновий потік (ES-модуль) і WebAssembly LibreDWG — окремими файлами, вантажаться лише для DWG
+  await esbuild.build({
+    entryPoints: ['src/dwg-worker.js'],
+    bundle: true,
+    minify: true,
+    format: 'esm',
+    target: 'es2020',
+    outfile: 'dist/dwg/dwg-worker.js',
+    // гілки клею Emscripten для Node.js у браузері не виконуються
+    external: ['module', 'fs', 'path', 'url', 'crypto', 'node:*'],
+    legalComments: 'none',
+    logLevel: 'warning',
+  });
+  await cp('node_modules/@mlightcad/libredwg-web/wasm/libredwg-web.wasm', 'dist/dwg/libredwg-web.wasm');
+  console.log(`dist/CPZ-Viewer.html (${(js.length / 1024).toFixed(0)} KB JS) + public/ + dwg/`);
 }
 
 const options = {

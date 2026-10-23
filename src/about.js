@@ -17,7 +17,7 @@ export default {
   <li><b>.CPZ</b> — проєкт CAPLAN (архів із файлами .CP і .L): точки, лінії, шари з кольорами.</li>
   <li><b>.CP + .L / .KOR</b> — ті самі файли окремо (виберіть їх разом).</li>
   <li><b>.DXF</b> (ASCII) — лінії, 2D/3D-полілінії, точки, дуги й кола, тексти, блоки з атрибутами, 3D-грані (DGM). Кирилиця й умлаути підтримуються.</li>
-  <li><b>DWG</b> поки не підтримується — збережіть креслення як DXF.</li>
+  <li><b>.DWG</b> — ті самі об'єкти, що й у DXF. Відкривається лише на сайті; під час першого відкриття завантажується модуль читання (≈ 10 МБ). Спеціальні об'єкти (Civil 3D тощо) не відображаються.</li>
 </ul>
 
 <h3>Відкриття файлу</h3>
@@ -74,7 +74,7 @@ ${keys([
   <li>У меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою (для роботи потрібен інтернет).</li>
 </ul>
 
-<p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.</p>`,
+<p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.<br>Читання DWG: LibreDWG (GNU GPL v3).</p>`,
   },
 
   de: {
@@ -91,7 +91,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
   <li><b>.CPZ</b> — CAPLAN-Projekt (Archiv mit .CP und .L): Punkte, Linien, Ebenen mit Farben.</li>
   <li><b>.CP + .L / .KOR</b> — dieselben Dateien einzeln (gemeinsam auswählen).</li>
   <li><b>.DXF</b> (ASCII) — Linien, 2D/3D-Polylinien, Punkte, Bögen und Kreise, Texte, Blöcke mit Attributen, 3D-Flächen (DGM). Umlaute und Kyrillisch werden unterstützt.</li>
-  <li><b>DWG</b> wird noch nicht unterstützt — Zeichnung bitte als DXF speichern.</li>
+  <li><b>.DWG</b> — dieselben Objekte wie bei DXF. Nur auf der Website; beim ersten Öffnen wird das Lesemodul (≈ 10 MB) geladen. Spezialobjekte (Civil 3D u. Ä.) werden nicht dargestellt.</li>
 </ul>
 
 <h3>Datei öffnen</h3>
@@ -148,7 +148,7 @@ ${keys([
   <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol (Internetverbindung erforderlich).</li>
 </ul>
 
-<p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.</p>`,
+<p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.<br>DWG-Lesen: LibreDWG (GNU GPL v3).</p>`,
   },
 
   en: {
@@ -165,7 +165,7 @@ Files are processed only on your device and are never uploaded.</p>
   <li><b>.CPZ</b> — CAPLAN project (archive with .CP and .L): points, lines, layers with colors.</li>
   <li><b>.CP + .L / .KOR</b> — the same files separately (select them together).</li>
   <li><b>.DXF</b> (ASCII) — lines, 2D/3D polylines, points, arcs and circles, texts, blocks with attributes, 3D faces (DTM). Umlauts and Cyrillic are supported.</li>
-  <li><b>DWG</b> is not supported yet — save the drawing as DXF.</li>
+  <li><b>.DWG</b> — the same objects as DXF. Works only on the website; the reader module (≈ 10 MB) is loaded the first time. Special objects (Civil 3D etc.) are not shown.</li>
 </ul>
 
 <h3>Opening a file</h3>
@@ -222,6 +222,6 @@ ${keys([
   <li>Choose “Add to Home screen” in the browser menu — the app gets its own icon (an internet connection is required).</li>
 </ul>
 
-<p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.</p>`,
+<p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.<br>DWG reading: LibreDWG (GNU GPL v3).</p>`,
   },
 };

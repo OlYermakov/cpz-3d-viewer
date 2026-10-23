@@ -17,6 +17,8 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 
 const FALLBACK_COLORS = [0xff5555, 0x55ff55, 0x5599ff, 0xffff55, 0xff55ff, 0x55ffff, 0xffaa33, 0xaa77ff];
 
+const SNAP_LIMIT = 200000;
+
 // «38 · Mauer oben» — номер Objektart і назва з каталогу (якщо є)
 const layerLabel = (id) => { const n = objName(id); return n ? `${id} · ${n}` : String(id); };
 
@@ -192,6 +194,9 @@ function buildModel(project) {
     layers, layerList, lines: project.lines, points: project.points, texts,
     origin, minX, maxX, minY, maxY, minZ, maxZ, zRange: maxZ - minZ, hasRealZ, fit,
     nPoints: project.points.length + project.lines.reduce((s, l) => s + l.pts.filter((p) => !p.nopick).length, 0),
+    // Прив'язка до вершин ліній — лише для креслень до SNAP_LIMIT вершин: інакше індекс і проєкція
+    // мільйонів вершин щокадру забирають гігабайти пам'яті й гальмують обертання
+    snapVertices: project.lines.reduce((s, l) => s + l.pts.length, 0) <= SNAP_LIMIT,
   };
 }
 
@@ -290,7 +295,8 @@ function rebuildScene() {
         const c = vcolor(p, ownColor(p.color));
         ptCol.push(c.r, c.g, c.b);
       }
-      if (!p.nopick) addPick(p, L, line);
+      // На дуже великих кресленнях вершини ліній не індексуються для прив'язки (див. SNAP_LIMIT)
+      if (!p.nopick && (!p.vertex || M.snapVertices)) addPick(p, L, line);
     };
 
     // Усі лінії шару — одним об'єктом (відрізками): тисячі полілiній DXF без втрати швидкості
@@ -817,8 +823,12 @@ function syncLayerChecks() { for (const L of state.model.layerList) L.checkbox.c
 
 async function openInputs(inputs) {
   $('loadErr').textContent = '';
+  // Читання DWG може тривати секунди (завантаження модуля, великі креслення) — показуємо, що йде робота
+  const isDwg = inputs.some((f) => /\.dwg$/i.test(f.name));
+  if (isDwg) showToast(t('loading.dwg'), 0);
   try {
     const project = await loadProject(inputs);
+    if (isDwg) hideToast();
     state.model = buildModel(project);
     state.selected = null; state.measurePts = []; state.hover = null;
     viewport.classList.add('loaded');
@@ -835,6 +845,8 @@ async function openInputs(inputs) {
   } catch (e) {
     console.error(e);
     $('loadErr').textContent = e.message || String(e);
+    // На телефоні панель з помилкою схована — дублюємо повідомлення поверх сцени
+    showToast(e.message || String(e), 6000);
   }
 }
 
@@ -1073,13 +1085,14 @@ window.addEventListener('keydown', (e) => {
 
 // Коротке повідомлення поверх сцени (напр., про перемикання перспективи клавішею O)
 let toastTimer = 0;
-function showToast(text) {
+function showToast(text, ms = 1600) {
   const el = $('toast');
   el.textContent = text;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+  if (ms) toastTimer = setTimeout(hideToast, ms); // ms = 0 — тримати, доки не викличуть hideToast
 }
+function hideToast() { clearTimeout(toastTimer); $('toast').classList.remove('show'); }
 
 function screenshot() {
   renderer.render(scene, camera);

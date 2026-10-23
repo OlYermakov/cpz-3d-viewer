@@ -7,7 +7,8 @@
 //     Точки після заголовка лінії належать цій лінії до наступного заголовка.
 
 import { t } from './i18n.js';
-import { decodeDXF, parseDXF } from './dxf.js';
+import { decodeDXF, parseDXF, parseSections } from './dxf.js';
+import { readDWG, dwgVersion } from './dwg.js';
 
 // ---------------------------------------------------------------- ZIP
 
@@ -144,7 +145,7 @@ export function parseL(text) {
 
 // ---------------------------------------------------------------- Завантаження набору файлів
 
-const SKIP_EXT = new Set(['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff', 'db', 'pdf', 'dwg', 'zip']);
+const SKIP_EXT = new Set(['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff', 'db', 'pdf', 'zip']);
 const ext = (n) => (n.includes('.') ? n.split('.').pop().toLowerCase() : '');
 
 /**
@@ -164,21 +165,28 @@ export async function loadProject(inputs) {
   }
 
   const project = { name, cp: null, header: [], points: [], lines: [], texts: [], sources: [], format: 'CPZ' };
+  // Креслення DXF/DWG (однакова модель): шари доповнюють шари з .CP, якщо файли відкрито разом.
+  // Без push(...масив): великі DWG дають сотні тисяч об'єктів, а це переповнює стек аргументів.
+  const addDrawing = (d, fileName, format) => {
+    project.cp ??= { layers: new Map() };
+    for (const [k, v] of d.cp.layers) if (!project.cp.layers.has(k)) project.cp.layers.set(k, v);
+    project.points = project.points.concat(d.points);
+    project.lines = project.lines.concat(d.lines);
+    project.texts = project.texts.concat(d.texts);
+    project.sources.push(fileName);
+    project.format = format;
+    project.name ??= fileName.replace(/\.[^.]+$/, '');
+  };
   for (const e of entries) {
     const x = ext(e.name);
     if (SKIP_EXT.has(x)) continue;
     if (x === 'dxf') {
       const { text, version } = decodeDXF(e.data);
-      const d = parseDXF(text);
-      // Шари DXF доповнюють шари з .CP (якщо файли відкрито разом)
-      project.cp ??= { layers: new Map() };
-      for (const [k, v] of d.cp.layers) if (!project.cp.layers.has(k)) project.cp.layers.set(k, v);
-      project.points.push(...d.points);
-      project.lines.push(...d.lines);
-      project.texts.push(...d.texts);
-      project.sources.push(e.name);
-      project.format = `DXF ${version}`.trim();
-      project.name ??= e.name.replace(/\.[^.]+$/, '');
+      addDrawing(parseDXF(text), e.name, `DXF ${version}`.trim());
+      continue;
+    }
+    if (x === 'dwg') {
+      addDrawing(parseSections(await readDWG(e.data)), e.name, `DWG ${dwgVersion(e.data)}`.trim());
       continue;
     }
     const text = decodeText(e.data);

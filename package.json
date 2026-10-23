@@ -11,6 +11,7 @@
     "icons": "node icons/build-icons.mjs"
   },
   "dependencies": {
+    "@mlightcad/libredwg-web": "0.7.15",
     "three": "0.170.0"
   },
   "devDependencies": {

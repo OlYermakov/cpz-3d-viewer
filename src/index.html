@@ -141,7 +141,8 @@
   #viewport.loaded #drop { display: none; }
   #viewport:not(.loaded) #status { display: none; }
   #toast { position: absolute; left: 50%; top: calc(72px + env(safe-area-inset-top)); transform: translate(-50%, -6px); padding: 8px 18px; border-radius: 999px;
-    font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .2s, transform .2s; white-space: nowrap; }
+    font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .2s, transform .2s;
+    max-width: calc(100% - 32px); text-align: center; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   /* ---------- Іконка-кнопка та вікно «Про застосунок» ---------- */
@@ -268,7 +269,7 @@
         <button class="only-mobile" id="btnCloseSheet" data-i18n-title="close">✕</button>
       </div>
       <button class="primary" id="btnOpen" data-i18n="open">Open file…</button>
-      <input type="file" id="fileInput" accept=".cpz,.CPZ,.cp,.l,.kor,.txt,.dxf,.DXF" multiple hidden>
+      <input type="file" id="fileInput" accept=".cpz,.CPZ,.cp,.l,.kor,.txt,.dxf,.DXF,.dwg,.DWG" multiple hidden>
       <div id="loadErr" class="err"></div>
     </header>
     <div class="scroll">

@@ -76,6 +76,28 @@ const pt = (e, c = 10) => [getN(e, c), getN(e, c + 10), getN(e, c + 20)];
 
 const IDENTITY = (p) => p;
 
+// Система координат об'єкта (OCS) → світова (WCS) за «довільною віссю» AutoCAD (Arbitrary Axis Algorithm).
+// Плоскі об'єкти (LWPOLYLINE, 2D-POLYLINE, CIRCLE, ARC, TEXT, SOLID, INSERT…) задаються в площині з нормаллю
+// 210/220/230; навіть незначний нахил нормалі при координатах у мільйони метрів дає «висоти» в десятки км,
+// тому координати таких об'єктів обов'язково переводяться у світові. Повертає null для звичайної площини XY.
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]); return l ? [v[0] / l, v[1] / l, v[2] / l] : v; };
+function normalOf(e) {
+  const n = [getN(e, 210, 0), getN(e, 220, 0), getN(e, 230, 1)];
+  return Math.hypot(n[0], n[1], n[2]) ? unit(n) : [0, 0, 1];
+}
+function ocsOf(e) {
+  const N = normalOf(e);
+  if (Math.abs(N[0]) < 1e-12 && Math.abs(N[1]) < 1e-12 && N[2] > 0) return null;
+  const Ax = unit(Math.abs(N[0]) < 1 / 64 && Math.abs(N[1]) < 1 / 64 ? cross([0, 1, 0], N) : cross([0, 0, 1], N));
+  const Ay = cross(N, Ax);
+  return (p) => [
+    p[0] * Ax[0] + p[1] * Ay[0] + p[2] * N[0],
+    p[0] * Ax[1] + p[1] * Ay[1] + p[2] * N[1],
+    p[0] * Ax[2] + p[1] * Ay[2] + p[2] * N[2],
+  ];
+}
+
 function insertTransform(parent, base, pos, sx, sy, sz, rotDeg) {
   const r = (rotDeg * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
   return (p) => {
@@ -130,7 +152,11 @@ const decodeUnicode = (s) => s
   .replace(/%%[cC]/g, 'Ø').replace(/%%[dD]/g, '°').replace(/%%[pP]/g, '±');
 
 export function parseDXF(text) {
-  const S = tokenize(text);
+  return parseSections(tokenize(text));
+}
+
+/** Секції записів DXF ({ HEADER, TABLES, BLOCKS, ENTITIES }) → модель; так само для DWG (src/dwg-worker.js). */
+export function parseSections(S) {
   if (!S.ENTITIES) throw new Error(t('e.noData'));
 
   // Глобальний масштаб типів ліній ($LTSCALE)
@@ -202,7 +228,9 @@ export function parseDXF(text) {
 
   // Стиль поточної сутності (колір / штрихи) — встановлюється перед обробкою кожної сутності
   let sty = { color: null, dash: null };
-  const vtx = (p, layer, extra) => ({ name: '', code: null, x: p[0], y: p[1], z: p[2], layer, attrs: [], color: sty.color, ...extra });
+  // Спільний порожній список атрибутів: у великих DWG мільйони вершин, окремий масив на кожну — сотні МБ
+  const NO_ATTRS = Object.freeze([]);
+  const vtx = (p, layer, extra) => ({ name: '', code: null, x: p[0], y: p[1], z: p[2], layer, attrs: NO_ATTRS, color: sty.color, ...extra });
   const addLine = (type, handle, layer, pts, { closed = false, pick = true } = {}) => {
     if (pts.length < 2) return;
     const v = pts.map((p) => vtx(p, layer, pick ? { vertex: true } : { vertex: true, nopick: true }));
@@ -225,6 +253,9 @@ export function parseDXF(text) {
       if (layer === '0' && parentLayer) layer = parentLayer;
       const h = get(e, 5, '').trim();
       const P = (c) => T(pt(e, c));
+      // Точки в системі об'єкта (OCS) → світові → перетворення блоку
+      const O = ocsOf(e);
+      const OT = O ? (p) => T(O(p)) : T;
       const st = styleOf(e, layer, parent);
       sty = { color: st.color, dash: dashOf(st, scale) };
 
@@ -249,9 +280,9 @@ export function parseDXF(text) {
           }
           const pts = [];
           raw.forEach((r, k) => {
-            pts.push(T(r));
+            pts.push(OT(r));
             const nx = raw[k + 1] ?? (closed ? raw[0] : null);
-            if (nx && r[3]) for (const q of bulgePoints(r, nx, r[3])) pts.push(T(q));
+            if (nx && r[3]) for (const q of bulgePoints(r, nx, r[3])) pts.push(OT(q));
           });
           addLine('LWPOLYLINE', h, layer, pts, { closed });
           break;
@@ -279,9 +310,10 @@ export function parseDXF(text) {
             const raw = verts.map((v) => { const p = pt(v); if (!is3D) p[2] = elev || p[2]; return [...p, getN(v, 42)]; });
             const pts = [];
             raw.forEach((r, k) => {
-              pts.push(T(r));
+              const M2 = is3D ? T : OT;
+              pts.push(M2(r));
               const nx = raw[k + 1] ?? (closed ? raw[0] : null);
-              if (nx && r[3]) for (const q of bulgePoints(r, nx, r[3])) pts.push(T(q));
+              if (nx && r[3]) for (const q of bulgePoints(r, nx, r[3])) pts.push(M2(q));
             });
             addLine(is3D ? 'POLYLINE3D' : 'POLYLINE', h, layer, pts, { closed });
           }
@@ -293,7 +325,7 @@ export function parseDXF(text) {
           const c = pt(e), r = getN(e, 40);
           const a0 = e.type === 'ARC' ? (getN(e, 50) * Math.PI) / 180 : 0;
           const a1 = e.type === 'ARC' ? (getN(e, 51) * Math.PI) / 180 : Math.PI * 2;
-          if (r > 0) addLine(e.type, h, layer, arcPoints(c[0], c[1], c[2], r, a0, a1).map(T), { pick: false });
+          if (r > 0) addLine(e.type, h, layer, arcPoints(c[0], c[1], c[2], r, a0, a1).map(OT), { pick: false });
           break;
         }
 
@@ -302,9 +334,11 @@ export function parseDXF(text) {
           let p0 = getN(e, 41, 0), p1 = getN(e, 42, Math.PI * 2);
           if (p1 <= p0) p1 += Math.PI * 2;
           const n = Math.max(8, Math.ceil((p1 - p0) / ARC_STEP)), pts = [];
+          // Центр і велика вісь — у світових координатах; мала вісь = нормаль × велика (з урахуванням нахилу площини)
+          const minor = cross(normalOf(e), ax);
           for (let k = 0; k <= n; k++) {
             const a = p0 + ((p1 - p0) * k) / n, ca = Math.cos(a), sa = Math.sin(a) * ratio;
-            pts.push(T([c[0] + ax[0] * ca - ax[1] * sa, c[1] + ax[1] * ca + ax[0] * sa, c[2] + ax[2] * ca]));
+            pts.push(T([c[0] + ax[0] * ca + minor[0] * sa, c[1] + ax[1] * ca + minor[1] * sa, c[2] + ax[2] * ca + minor[2] * sa]));
           }
           addLine('ELLIPSE', h, layer, pts, { pick: false });
           break;
@@ -332,14 +366,14 @@ export function parseDXF(text) {
 
         case 'SOLID':
         case 'TRACE': {
-          const q = [P(10), P(11), P(13), P(12)];
+          const q = [10, 11, 13, 12].map((c) => OT(pt(e, c)));
           addLine(e.type, h, layer, q, { closed: true, pick: false });
           break;
         }
 
         case 'TEXT': {
           const aligned = getN(e, 72) || getN(e, 73);
-          addText(get(e, 1, ''), aligned ? P(11) : P(10), layer, getN(e, 40, 1) * scale);
+          addText(get(e, 1, ''), OT(pt(e, aligned ? 11 : 10)), layer, getN(e, 40, 1) * scale);
           break;
         }
 
@@ -372,13 +406,15 @@ export function parseDXF(text) {
           const dc = getN(e, 44), dr = getN(e, 45);
           for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
             const off = [pos[0] + c * dc, pos[1] + r * dr, pos[2]];
-            if (b && depth < 10) walk(b.ents, insertTransform(T, b.base, off, sx, sy, sz, rot), layer, scale * Math.abs(sx), depth + 1, own);
+            if (b && depth < 10) walk(b.ents, insertTransform(OT, b.base, off, sx, sy, sz, rot), layer, scale * Math.abs(sx), depth + 1, own);
           }
           sty = mine; // відновити стиль вставки після обходу вмісту блоку
           // Точка вставки — як точка зйомки; назва з першого непорожнього атрибута
           const vals = attribs.filter((a) => !(getN(a, 70) & 1)).map((a) => ({ tag: get(a, 2, '').trim(), val: decodeUnicode(get(a, 1, '')).trim() })).filter((a) => a.val);
-          if (depth === 0) {
-            out.points.push(vtx(T(pos), layer, {
+          // Вставка рівно в 0,0 — блок, накреслений одразу в реальних координатах (часто в DWG/DXF):
+          // його геометрія на місці, а «точка вставки» в нулі координат лише заважала б
+          if (depth === 0 && !(pos[0] === 0 && pos[1] === 0)) {
+            out.points.push(vtx(OT(pos), layer, {
               name: vals[0]?.val ?? '',
               attrs: [`Block: ${get(e, 2, '').trim()}`, ...vals.slice(1).map((a) => `${a.tag}=${a.val}`)],
             }));
@@ -388,7 +424,8 @@ export function parseDXF(text) {
             const aligned = getN(a, 72) || getN(a, 74);
             const aLayer = (get(a, 8, layer) || layer).trim();
             sty = { color: styleOf(a, aLayer, own).color, dash: null };
-            addText(get(a, 1, ''), T(aligned ? pt(a, 11) : pt(a, 10)), aLayer, getN(a, 40, 1) * scale);
+            const AO = ocsOf(a);
+            addText(get(a, 1, ''), T((AO ?? IDENTITY)(aligned ? pt(a, 11) : pt(a, 10))), aLayer, getN(a, 40, 1) * scale);
           }
           sty = mine;
           break;
