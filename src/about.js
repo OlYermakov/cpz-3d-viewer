@@ -37,6 +37,7 @@ export default {
 <h3>Точки й вимірювання</h3>
 <ul>
   <li>Клік (дотик) на точці показує назву, координати Rechtswert / Hochwert / Höhe, шар і лінії з довжиною в плані та 3D. На телефоні координати — у рядку внизу екрана.</li>
+  <li>Поки точку вибрано, модель обертається навколо неї. Клік у порожнє місце або <kbd>Esc</kbd> знімає вибір.</li>
   <li>«Виміряти»: клікніть дві точки — похила й горизонтальна відстань, перевищення ΔH, ухил і дирекційний кут (° та gon). У DXF можна прив'язуватися до вершин ліній.</li>
 </ul>
 
@@ -110,6 +111,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 <h3>Punkte und Messen</h3>
 <ul>
   <li>Klick (Tippen) auf einen Punkt zeigt Name, Rechtswert / Hochwert / Höhe, Ebene und Linien mit Länge im Grundriss und in 3D. Auf dem Smartphone stehen die Koordinaten in der Leiste unten.</li>
+  <li>Solange ein Punkt ausgewählt ist, dreht sich das Modell um diesen Punkt. Klick ins Leere oder <kbd>Esc</kbd> hebt die Auswahl auf.</li>
   <li>„Messen“: zwei Punkte anklicken — Schräg- und Horizontalstrecke, Höhenunterschied ΔH, Neigung und Richtungswinkel (° und gon). In DXF kann an Linien-Stützpunkte gefangen werden.</li>
 </ul>
 
@@ -183,6 +185,7 @@ Files are processed only on your device and are never uploaded.</p>
 <h3>Points and measuring</h3>
 <ul>
   <li>Click (tap) a point to see its name, Rechtswert / Hochwert / Höhe coordinates, layer and lines with plan and 3D length. On a phone the coordinates appear in the bar at the bottom.</li>
+  <li>While a point is selected, the model orbits around it. Click an empty spot or press <kbd>Esc</kbd> to clear the selection.</li>
   <li>“Measure”: click two points — slope and horizontal distance, height difference ΔH, grade and bearing (° and gon). In DXF you can snap to line vertices.</li>
 </ul>
 

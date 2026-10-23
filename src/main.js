@@ -907,6 +907,7 @@ canvas.addEventListener('pointerup', (e) => {
     if (state.measurePts.length >= 2) state.measurePts = [];
     state.measurePts.push(p);
   } else {
+    if (p && p !== state.selected) showToast(`${t('toast.pivot')} ${ptName(p)}`);
     state.selected = p;
   }
   updateInfo();
@@ -969,6 +970,55 @@ canvas.addEventListener('pointermove', (e) => {
   }
 }, { capture: true });
 for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, (e) => touchPts.delete(e.pointerId), { capture: true });
+
+// Обертання навколо вибраної точки. OrbitControls обертає лише навколо своєї цілі (центру екрана),
+// тому поки точку вибрано, обертання (ЛКМ / один палець) виконується тут: камера й ціль повертаються
+// навколо точки — точка лишається нерухомою на екрані, без стрибка вигляду. Зум і зсув — як завжди.
+const pivotDrag = { active: false, id: null, x: 0, y: 0 };
+const pivotQ = new THREE.Quaternion(), pivotQ2 = new THREE.Quaternion();
+const pivotP = new THREE.Vector3(), pivotRight = new THREE.Vector3(), pivotOff = new THREE.Vector3(), pivotFwd = new THREE.Vector3();
+const WORLD_UP = new THREE.Vector3(0, 0, 1);
+
+function orbitAroundSelected(dx, dy) {
+  const p = state.selected;
+  if (!p) return;
+  const h = renderer.domElement.clientHeight || 1;
+  // Ті самі кути й напрямки, що в OrbitControls (2π на висоту полотна)
+  const theta = (-2 * Math.PI * dx) / h, phi = (-2 * Math.PI * dy) / h;
+  pivotP.set(p.lx, p.ly, p.lz * state.zScale);
+  pivotRight.setFromMatrixColumn(camera.matrixWorld, 0);
+  pivotQ2.setFromAxisAngle(pivotRight, phi);
+  // не перевертати камеру через вертикаль
+  pivotFwd.copy(controls.target).sub(camera.position).normalize().applyQuaternion(pivotQ2);
+  if (Math.abs(pivotFwd.z) > 0.995) pivotQ2.identity();
+  pivotQ.setFromAxisAngle(WORLD_UP, theta).multiply(pivotQ2);
+  for (const v of [camera.position, controls.target]) {
+    pivotOff.copy(v).sub(pivotP).applyQuaternion(pivotQ);
+    v.copy(pivotP).add(pivotOff);
+  }
+  camera.lookAt(controls.target);
+  controls.update();
+  requestRender();
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  const oneFinger = e.pointerType === 'touch' && touchPts.size === 1;
+  const leftMouse = e.pointerType !== 'touch' && e.button === 0;
+  if (!state.selected || !(leftMouse || oneFinger)) return;
+  Object.assign(pivotDrag, { active: true, id: e.pointerId, x: e.clientX, y: e.clientY });
+  controls.enableRotate = false; // обертання робимо самі; зсув/зум двома пальцями лишаються за OrbitControls
+}, { capture: true });
+canvas.addEventListener('pointermove', (e) => {
+  if (!pivotDrag.active || e.pointerId !== pivotDrag.id) return;
+  if (touchPts.size > 1) { pivotDrag.active = false; return; } // другий палець — це вже зум/зсув
+  orbitAroundSelected(e.clientX - pivotDrag.x, e.clientY - pivotDrag.y);
+  pivotDrag.x = e.clientX; pivotDrag.y = e.clientY;
+}, { capture: true });
+for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, () => {
+  if (touchPts.size) return;
+  pivotDrag.active = false;
+  controls.enableRotate = true;
+});
 
 const bindCheck = (id, key, rebuild) => $(id).addEventListener('change', (e) => {
   state[key] = e.target.checked;
