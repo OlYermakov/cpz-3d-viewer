@@ -9,6 +9,7 @@
 import { t } from './i18n.js';
 import { decodeDXF, parseDXF, parseSections } from './dxf.js';
 import { readDWG, dwgVersion } from './dwg.js';
+import { linePattern } from './linetypes.js';
 
 // ---------------------------------------------------------------- ZIP
 
@@ -136,7 +137,8 @@ export function parseL(text) {
     } else {
       const name = main.trim();
       if (!name) continue;
-      cur = { name, layer, attrs: attrs.slice(1), pts: [] };
+      // lt — тип лінії CAPLAN за Objektart (null — суцільна)
+      cur = { name, layer, attrs: attrs.slice(1), pts: [], lt: linePattern(layer) };
       out.lines.push(cur);
     }
   }

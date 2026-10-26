@@ -248,6 +248,71 @@ function pushDashed(line, own, vcolor, seg) {
   return true;
 }
 
+// Тип лінії CAPLAN (src/linetypes.js): малюнок пера, що повторюється з періодом уздовж полілінії
+// в плані; y — зсув ліворуч від напрямку лінії (подвійні лінії, зубці паркану). Висота
+// інтерполюється вздовж ланки. Повертає false, якщо малюнок надто дрібний — лінія буде суцільною.
+function pushPattern(line, own, vcolor, seg) {
+  const { period, strokes } = line.lt;
+  const P = line.pts, n = P.length;
+  const cum = [0];
+  for (let k = 1; k < n; k++) cum.push(cum[k - 1] + Math.hypot(P[k].lx - P[k - 1].lx, P[k].ly - P[k - 1].ly));
+  const total = cum[n - 1];
+  if (total < period * 0.5 || total / period > 5000) return false;
+  const cols = P.map((p) => vcolor(p, own));
+  // Ланка, на якій лежить відстань s (остання з cum[k] <= s)
+  const segAt = (s) => {
+    let lo = 0, hi = n - 2;
+    while (lo < hi) { const m = (lo + hi + 1) >> 1; if (cum[m] <= s) lo = m; else hi = m - 1; }
+    return lo;
+  };
+  const at = (k, s, off) => {
+    const a = P[k], b = P[k + 1], L = cum[k + 1] - cum[k];
+    const t = L > 0 ? (s - cum[k]) / L : 0;
+    const dx = L > 0 ? (b.lx - a.lx) / L : 0, dy = L > 0 ? (b.ly - a.ly) / L : 0;
+    const ca = cols[k], cb = cols[k + 1];
+    return {
+      p: [a.lx + (b.lx - a.lx) * t - dy * off, a.ly + (b.ly - a.ly) * t + dx * off, a.lz + (b.lz - a.lz) * t],
+      c: ca === cb ? ca : ca.clone().lerp(cb, t),
+    };
+  };
+  // Штрих від (s1, y1) до (s2, y2): ділиться у вершинах полілінії, щоб іти за її вигинами
+  const stroke = (s1, y1, s2, y2) => {
+    if (s1 > total || s2 > total) {
+      if (s1 >= total && s2 >= total) return;
+      const yT = y1 + (y2 - y1) * (total - s1) / (s2 - s1); // обрізання штриха на кінці лінії
+      if (s1 > total) { s1 = total; y1 = yT; } else { s2 = total; y2 = yT; }
+    }
+    if (s1 === s2) {
+      const k = segAt(s1), A = at(k, s1, y1), B = at(k, s2, y2);
+      seg(A.p, B.p, A.c, B.c);
+      return;
+    }
+    const lo = Math.min(s1, s2), hi = Math.max(s1, s2);
+    const cuts = [s1];
+    for (let k = 1; k < n - 1; k++) if (cum[k] > lo && cum[k] < hi) cuts.push(cum[k]);
+    if (s1 > s2) cuts.sort((u, v) => v - u); else cuts.sort((u, v) => u - v);
+    cuts.push(s2);
+    const yAt = (s) => y1 + (y2 - y1) * (s - s1) / (s2 - s1);
+    for (let i = 1; i < cuts.length; i++) {
+      const sa = cuts[i - 1], sb = cuts[i], k = segAt((sa + sb) / 2);
+      const A = at(k, sa, yAt(sa)), B = at(k, sb, yAt(sb));
+      seg(A.p, B.p, A.c, B.c);
+    }
+  };
+  for (let base = 0; base < total; base += period) {
+    let prev = null;
+    for (const [pen, x, y] of strokes) {
+      if (pen === 1 && prev) stroke(base + prev[0], prev[1], base + x, y);
+      prev = [x, y];
+    }
+  }
+  // Вертикальні ланки (без довжини в плані) — суцільні
+  for (let k = 1; k < n; k++) {
+    if (cum[k] === cum[k - 1] && P[k].lz !== P[k - 1].lz) seg([P[k - 1].lx, P[k - 1].ly, P[k - 1].lz], [P[k].lx, P[k].ly, P[k].lz], cols[k - 1], cols[k]);
+  }
+  return true;
+}
+
 function rebuildScene() {
   disposeGroup(modelGroup);
   entityColors.clear(); // корекція кольорів залежить від теми
@@ -308,6 +373,7 @@ function rebuildScene() {
       if (!state.showLines || line.pts.length < 2) continue;
       const own = ownColor(line.color);
       if (state.showLtypes && line.dash && pushDashed(line, own, vcolor, seg)) continue;
+      if (state.showLtypes && line.lt && pushPattern(line, own, vcolor, seg)) continue;
       for (let k = 1; k < line.pts.length; k++) {
         const a = line.pts[k - 1], b = line.pts[k];
         seg([a.lx, a.ly, a.lz], [b.lx, b.ly, b.lz], vcolor(a, own), vcolor(b, own));

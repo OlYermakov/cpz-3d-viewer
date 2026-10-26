@@ -50,7 +50,7 @@ export default {
 <h3>Відображення</h3>
 <ul>
   <li><b>Лінії, Точки, Тексти, Сітка</b> — показ відповідних елементів.</li>
-  <li><b>Типи ліній</b> — штрихові й штрихпунктирні лінії з DXF; об'єкти DXF мають власні кольори, як у кресленні.</li>
+  <li><b>Типи ліній</b> — у CPZ за налаштуваннями CAPLAN (паркан, осі, межі покриття тощо; малюнок у масштабі 1:500), у DXF — штрихові й штрихпунктирні; об'єкти DXF мають власні кольори, як у кресленні.</li>
   <li><b>Назви точок, Висоти</b> — підписи біля точок, без накладання одне на одне.</li>
   <li><b>2D-об'єкти</b> — об'єкти без висоти (H = 0) розміщуються на рівні найнижчої точки.</li>
   <li><b>Проєкції</b> — вертикальні лінії від точок до сітки.</li>
@@ -124,7 +124,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 <h3>Darstellung</h3>
 <ul>
   <li><b>Linien, Punkte, Texte, Raster</b> — Anzeige der jeweiligen Elemente.</li>
-  <li><b>Linientypen</b> — Strich- und Strichpunktlinien aus DXF; DXF-Objekte behalten ihre eigenen Farben wie in der Zeichnung.</li>
+  <li><b>Linientypen</b> — im CPZ nach den CAPLAN-Einstellungen (Zaun, Achsen, Befestigungsgrenze usw.; Muster im Maßstab 1:500), im DXF Strich- und Strichpunktlinien; DXF-Objekte behalten ihre eigenen Farben wie in der Zeichnung.</li>
   <li><b>Punktnamen, Höhen</b> — Beschriftung an den Punkten, ohne Überlappung.</li>
   <li><b>2D-Objekte</b> — Objekte ohne Höhe (H = 0) werden auf Höhe des tiefsten Punktes dargestellt.</li>
   <li><b>Lote</b> — senkrechte Linien von den Punkten zum Raster.</li>
@@ -198,7 +198,7 @@ Files are processed only on your device and are never uploaded.</p>
 <h3>Display</h3>
 <ul>
   <li><b>Lines, Points, Texts, Grid</b> — show the corresponding elements.</li>
-  <li><b>Linetypes</b> — dashed and dash-dot lines from DXF; DXF objects keep their own colors as in the drawing.</li>
+  <li><b>Linetypes</b> — in CPZ from the CAPLAN settings (fences, axes, pavement edges etc.; pattern at 1:500 scale), in DXF dashed and dash-dot lines; DXF objects keep their own colors as in the drawing.</li>
   <li><b>Point names, Heights</b> — labels next to points, without overlaps.</li>
   <li><b>2D objects</b> — objects without height (H = 0) are placed at the level of the lowest point.</li>
   <li><b>Drop lines</b> — vertical lines from points down to the grid.</li>
