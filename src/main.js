@@ -709,11 +709,18 @@ function pill(x, y, w, h, dark) {
   ctx.lineWidth = 1; ctx.strokeStyle = dark ? 'rgba(140,220,255,.35)' : 'rgba(20,120,170,.25)'; ctx.stroke();
 }
 
+// Вертикальний центр верхньої панелі телефона в координатах сцени
+function topBarY() {
+  const b = $('btnMenu').getBoundingClientRect(), v = viewport.getBoundingClientRect();
+  return b.height ? b.top - v.top + b.height / 2 : safeTop + 33;
+}
+
 function drawCompass(dark) {
   // На телефоні — компактно у верхньому правому куті (низ зайнятий панеллю інструментів)
   const small = isNarrow();
   const len = small ? 18 : 28;
-  const cx = small ? vw - 42 : 56, cy = small ? safeTop + 98 : vh - 84;
+  // На телефоні — на рівні верхньої панелі (центр кнопки меню), праворуч
+  const cx = small ? vw - 44 : 56, cy = small ? topBarY() : vh - 84;
   const m = camera.matrixWorldInverse;
   const axes = [
     { v: new THREE.Vector3(1, 0, 0), c: dark ? '#ff8a96' : '#d9475a', t: 'E' },
