@@ -110,20 +110,23 @@ const POINT_RE = new RegExp(`^\\s*(.*?\\S)\\s+(\\d+)\\s+${NUM}\\s+${NUM}(?:\\s+$
 // Дуга між двома точками лінії: рядок після точки "0  <радіус>  <ознака 1|0>  ."
 const ARC_RE = new RegExp(`^\\s*0\\s+${NUM}\\s+${NUM}(?:\\s+\\S+)?\\s*$`);
 
-// Проміжні вершини дуги від a до b радіусом r. Центр — ліворуч від напрямку a→b при ознаці 1 і
-// праворуч при 0; дуга йде за годинниковою стрілкою (як кути в геодезії). Так коло з CAPLAN —
-// дві дуги A→B (1) і B→A (0) — замикається, а центр збігається з виміряним центром кришки.
-// Висота змінюється лінійно від a до b.
+// Проміжні вершини дуги від a до b. Знак радіуса — напрямок: + за годинниковою стрілкою, − проти;
+// ознака 1 — більша з двох можливих дуг, 0 — менша (як у SVG). Перевірено на колах CAPLAN (дві дуги
+// A→B з ознакою 1 і B→A з 0, з додатним і від'ємним радіусом): центр збігається з виміряною
+// точкою центру кришки / шахти. Висота змінюється лінійно від a до b.
 function arcVertices(a, b, r, flag) {
   const dx = b.x - a.x, dy = b.y - a.y, c = Math.hypot(dx, dy);
+  const cw = r > 0;
   r = Math.abs(r);
   if (!(c > 1e-9) || !(r > 0)) return [];
-  const h = Math.sqrt(Math.max(0, r * r - (c / 2) ** 2)) * (flag ? 1 : -1);
+  // Центр ліворуч від a→b для великої дуги за годинниковою і малої проти; інакше праворуч
+  const h = Math.sqrt(Math.max(0, r * r - (c / 2) ** 2)) * ((flag ? 1 : 0) === (cw ? 1 : 0) ? 1 : -1);
   const cx = (a.x + b.x) / 2 - (dy / c) * h, cy = (a.y + b.y) / 2 + (dx / c) * h;
   const a0 = Math.atan2(a.y - cy, a.x - cx);
   let sweep = Math.atan2(b.y - cy, b.x - cx) - a0;
-  while (sweep >= 0) sweep -= 2 * Math.PI; // за годинниковою стрілкою: кут зменшується
-  const n = Math.max(2, Math.ceil((-sweep / (2 * Math.PI)) * 48));
+  if (cw) while (sweep >= 0) sweep -= 2 * Math.PI; // за годинниковою: кут зменшується
+  else while (sweep <= 0) sweep += 2 * Math.PI;
+  const n = Math.max(2, Math.ceil((Math.abs(sweep) / (2 * Math.PI)) * 48));
   const out = [];
   for (let i = 1; i < n; i++) {
     const t = i / n, ang = a0 + sweep * t;
@@ -172,12 +175,15 @@ export function parseL(text) {
       out.lines.push(cur);
     }
   }
+  // Заголовки без точок (або рядки інших форматів, схожі на заголовок) — не лінії
+  out.lines = out.lines.filter((l) => l.pts.length);
   return out;
 }
 
 // ---------------------------------------------------------------- Завантаження набору файлів
 
-const SKIP_EXT = new Set(['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff', 'db', 'pdf', 'zip']);
+// .A — осі (трасування: прямі, дуги, клотоїди) — поки не відображаються
+const SKIP_EXT = new Set(['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff', 'db', 'pdf', 'zip', 'a']);
 const ext = (n) => (n.includes('.') ? n.split('.').pop().toLowerCase() : '');
 
 /**
