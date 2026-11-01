@@ -185,7 +185,8 @@ function buildModel(project) {
     line.len2D = l2; line.len3D = l3;
     // DXF задає замкненість прапорцем; у CPZ замкнена лінія повторює першу точку
     line.closed ??= line.pts.length > 2 && !!line.pts[0].name && line.pts[0].name === line.pts.at(-1).name;
-    L.lines.push(line); L.nPts += line.pts.length;
+    // Проміжні вершини дуг (nopick) — лише геометрія, точками не рахуються
+    L.lines.push(line); for (const p of line.pts) if (!p.nopick) L.nPts++;
   }
 
   const layerList = [...layers.values()].sort((a, b) => (parseFloat(a.id) - parseFloat(b.id)) || a.id.localeCompare(b.id));

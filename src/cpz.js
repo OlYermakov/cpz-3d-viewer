@@ -107,12 +107,37 @@ export function parseCP(text) {
 
 const NUM = '([-+]?\\d+(?:\\.\\d*)?)';
 const POINT_RE = new RegExp(`^\\s*(.*?\\S)\\s+(\\d+)\\s+${NUM}\\s+${NUM}(?:\\s+${NUM})?\\s*$`);
+// Дуга між двома точками лінії: рядок після точки "0  <радіус>  <ознака 1|0>  ."
+const ARC_RE = new RegExp(`^\\s*0\\s+${NUM}\\s+${NUM}(?:\\s+\\S+)?\\s*$`);
+
+// Проміжні вершини дуги від a до b радіусом r. Центр — ліворуч від напрямку a→b при ознаці 1 і
+// праворуч при 0; дуга йде за годинниковою стрілкою (як кути в геодезії). Так коло з CAPLAN —
+// дві дуги A→B (1) і B→A (0) — замикається, а центр збігається з виміряним центром кришки.
+// Висота змінюється лінійно від a до b.
+function arcVertices(a, b, r, flag) {
+  const dx = b.x - a.x, dy = b.y - a.y, c = Math.hypot(dx, dy);
+  r = Math.abs(r);
+  if (!(c > 1e-9) || !(r > 0)) return [];
+  const h = Math.sqrt(Math.max(0, r * r - (c / 2) ** 2)) * (flag ? 1 : -1);
+  const cx = (a.x + b.x) / 2 - (dy / c) * h, cy = (a.y + b.y) / 2 + (dx / c) * h;
+  const a0 = Math.atan2(a.y - cy, a.x - cx);
+  let sweep = Math.atan2(b.y - cy, b.x - cx) - a0;
+  while (sweep >= 0) sweep -= 2 * Math.PI; // за годинниковою стрілкою: кут зменшується
+  const n = Math.max(2, Math.ceil((-sweep / (2 * Math.PI)) * 48));
+  const out = [];
+  for (let i = 1; i < n; i++) {
+    const t = i / n, ang = a0 + sweep * t;
+    const z = a.z != null && b.z != null ? a.z + (b.z - a.z) * t : (a.z ?? b.z);
+    out.push({ name: '', code: null, x: cx + r * Math.cos(ang), y: cy + r * Math.sin(ang), z, layer: a.layer, attrs: [], vertex: true, nopick: true });
+  }
+  return out;
+}
 
 export function parseL(text) {
   const out = { header: [], points: [], lines: [] };
-  let cur = null;
+  let cur = null, arc = null;
   for (const rawLine of text.split(/\r?\n/)) {
-    if (!rawLine.trim()) { cur = null; continue; }
+    if (!rawLine.trim()) { cur = null; arc = null; continue; }
     if (rawLine.trimStart().startsWith('!')) {
       const c = rawLine.replace(/^\s*!\s?/, '').trim();
       if (c && !/^-+$/.test(c)) out.header.push(c);
@@ -122,6 +147,8 @@ export function parseL(text) {
     const main = bar >= 0 ? rawLine.slice(0, bar) : rawLine;
     const attrs = bar >= 0 ? rawLine.slice(bar + 1).split('|').map((s) => s.trim()) : [];
     const layer = attrs[0] || '0';
+    const am = cur && cur.pts.length ? main.match(ARC_RE) : null;
+    if (am) { arc = { r: +am[1], flag: +am[2] }; continue; }
     const m = main.match(POINT_RE);
     if (m) {
       const p = {
@@ -133,8 +160,11 @@ export function parseL(text) {
         layer,
         attrs: attrs.slice(1),
       };
+      if (cur && arc) cur.pts.push(...arcVertices(cur.pts[cur.pts.length - 1], p, arc.r, arc.flag));
+      arc = null;
       (cur ? cur.pts : out.points).push(p);
     } else {
+      arc = null;
       const name = main.trim();
       if (!name) continue;
       // lt — тип лінії CAPLAN за Objektart (null — суцільна)
