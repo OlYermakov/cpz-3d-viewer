@@ -9,7 +9,8 @@
 import { t } from './i18n.js';
 import { decodeDXF, parseDXF, parseSections } from './dxf.js';
 import { readDWG, dwgVersion } from './dwg.js';
-import { linePattern } from './linetypes.js';
+import { linePattern, layerPattern } from './linetypes.js';
+import { parseA, axisPoints } from './axes.js';
 
 // ---------------------------------------------------------------- ZIP
 
@@ -180,10 +181,69 @@ export function parseL(text) {
   return out;
 }
 
+// ---------------------------------------------------------------- Осі (*.A)
+
+/** Шар, на якому показуються осі (колір і тип лінії — як у шару ACHSEN з Layer.DAT). */
+export const AXES_LAYER = 'Achsen';
+
+// Станція у вигляді кілометражу: 40169.9 → «40+169,9», 40170 → «40+170»
+const kmLabel = (st) => {
+  const km = Math.floor(st / 1000 + 1e-9), m = st - km * 1000;
+  const r = Math.round(m * 10) / 10;
+  return `${km}+${String(Math.floor(r)).padStart(3, '0')}${r % 1 ? ',' + Math.round((r % 1) * 10) : ''}`;
+};
+
+// Осі додаються як лінії шару «Achsen» з підписами станцій. Якщо в проєкті є точки/лінії, показуються
+// лише ділянки осей біля креслення (рамка креслення + запас): осі бувають довжиною в десятки кілометрів
+// і інакше зменшили б креслення до точки. Висота — з градієнти осі; без неї вісь двовимірна.
+function addAxes(project, axes) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  const grow = (p) => { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y; };
+  project.points.forEach(grow);
+  for (const l of project.lines) l.pts.forEach(grow);
+  let box = null;
+  if (x0 <= x1) {
+    const pad = Math.max(30, 0.5 * Math.max(x1 - x0, y1 - y0));
+    box = { x0: x0 - pad, x1: x1 + pad, y0: y0 - pad, y1: y1 + pad };
+  }
+  const inside = (p) => !box || (p.x >= box.x0 && p.x <= box.x1 && p.y >= box.y0 && p.y <= box.y1);
+  const lt = layerPattern('ACHSEN');
+  const runs = [];
+  for (const ax of axes) {
+    const pts = axisPoints(ax, box ? 0.5 : 2);
+    let run = null;
+    for (let i = 0; i < pts.length; i++) {
+      if (inside(pts[i])) {
+        // Ділянка починається й закінчується однією точкою за межею — щоб доходила до краю рамки
+        if (!run) { run = { ax, pts: i > 0 ? [pts[i - 1]] : [] }; runs.push(run); }
+        run.pts.push(pts[i]);
+      } else if (run) { run.pts.push(pts[i]); run = null; }
+    }
+  }
+  if (!runs.length) return;
+  project.cp ??= { layers: new Map() };
+  if (!project.cp.layers.has(AXES_LAYER)) project.cp.layers.set(AXES_LAYER, { id: AXES_LAYER, color: 0xff00ff, visible: true, width: 1 });
+  for (const { ax, pts } of runs) {
+    if (pts.length < 2) continue;
+    const vtx = pts.map((p) => ({ name: '', code: null, x: p.x, y: p.y, z: p.z, layer: AXES_LAYER, attrs: [], vertex: true, nopick: true }));
+    project.lines.push({ name: ax.name, layer: AXES_LAYER, attrs: [], pts: vtx, lt, axis: true });
+    // Підписи: назва осі на початку ділянки й станції через «круглий» крок (до ~8 на ділянку)
+    const len = pts.at(-1).st - pts[0].st;
+    const step = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000].find((s) => len / s <= 8) ?? 10000;
+    const text = (s, p) => project.texts.push({ text: s, x: p.x, y: p.y, z: p.z, layer: AXES_LAYER, color: null });
+    text(ax.name, pts[Math.floor(pts.length / 4)]);
+    for (let k = Math.ceil(pts[0].st / step) * step; k <= pts.at(-1).st; k += step) {
+      // Найближча обчислена точка до круглої станції (крок обчислення 0,5–2 м)
+      let best = pts[0];
+      for (const p of pts) if (Math.abs(p.st - k) < Math.abs(best.st - k)) best = p;
+      text(kmLabel(k), best);
+    }
+  }
+}
+
 // ---------------------------------------------------------------- Завантаження набору файлів
 
-// .A — осі (трасування: прямі, дуги, клотоїди) — поки не відображаються
-const SKIP_EXT = new Set(['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff', 'db', 'pdf', 'zip', 'a']);
+const SKIP_EXT = new Set(['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tif', 'tiff', 'db', 'pdf', 'zip']);
 const ext = (n) => (n.includes('.') ? n.split('.').pop().toLowerCase() : '');
 
 /**
@@ -203,6 +263,7 @@ export async function loadProject(inputs) {
   }
 
   const project = { name, cp: null, header: [], points: [], lines: [], texts: [], sources: [], format: 'CPZ' };
+  const axes = [];
   // Креслення DXF/DWG (однакова модель): шари доповнюють шари з .CP, якщо файли відкрито разом.
   // Без push(...масив): великі DWG дають сотні тисяч об'єктів, а це переповнює стек аргументів.
   const addDrawing = (d, fileName, format) => {
@@ -228,6 +289,11 @@ export async function loadProject(inputs) {
       continue;
     }
     const text = decodeText(e.data);
+    if (x === 'a') {
+      axes.push(...parseA(text));
+      project.sources.push(e.name);
+      continue;
+    }
     if (x === 'cp') {
       project.cp = parseCP(text);
       project.name ??= e.name.replace(/\.[^.]+$/, '');
@@ -241,6 +307,7 @@ export async function loadProject(inputs) {
     project.sources.push(e.name);
     project.name ??= e.name.replace(/\.[^.]+$/, '');
   }
+  if (axes.length) addAxes(project, axes);
   if (!project.sources.length) throw new Error(t('e.noData'));
   return project;
 }

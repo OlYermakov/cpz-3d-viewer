@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { loadProject } from './cpz.js';
+import { loadProject, AXES_LAYER } from './cpz.js';
 import { t, getLang, setLang, applyI18n } from './i18n.js';
 import { objName, objColor } from './objtypes.js';
 
@@ -20,7 +20,9 @@ const FALLBACK_COLORS = [0xff5555, 0x55ff55, 0x5599ff, 0xffff55, 0xff55ff, 0x55f
 const SNAP_LIMIT = 200000;
 
 // «38 · Mauer oben» — номер Objektart і назва з каталогу (якщо є)
-const layerLabel = (id) => { const n = objName(id); return n ? `${id} · ${n}` : String(id); };
+// Назва шару: Objektart з каталогу або «осі» для шару осей із файлу .A
+const layerName = (id) => (id === AXES_LAYER ? t('lay.axes') : objName(id));
+const layerLabel = (id) => { const n = layerName(id); return n ? `${id} · ${n}` : String(id); };
 
 const state = {
   model: null,
@@ -149,7 +151,14 @@ function buildModel(project) {
   const texts = project.texts ?? [];
   const all = [...project.points, ...project.lines.flatMap((l) => l.pts)];
   const xs = [], ys = [], zs = [];
-  for (const p of [...all, ...texts]) { xs.push(p.x); ys.push(p.y); if (p.z != null && p.z !== 0) zs.push(p.z); }
+  // Осі з файлу .A не впливають на межі моделі («Вписати», сітку), якщо є саме креслення:
+  // інакше креслення шахти (1 м) губилося б серед десятків метрів осей навколо
+  let bounded = [...all, ...texts];
+  if (project.lines.some((l) => l.axis)) {
+    const own = bounded.filter((p) => p.layer !== AXES_LAYER);
+    if (own.length) bounded = own;
+  }
+  for (const p of bounded) { xs.push(p.x); ys.push(p.y); if (p.z != null && p.z !== 0) zs.push(p.z); }
   const hasRealZ = zs.length > 0;
   // Межі: повні (для інформації) і «стійкі» без 0,5 % крайніх значень — щоб одиничні об'єкти
   // далеко від креслення (рамка, легенда в нулі координат) не зменшували модель при «Вписати»
@@ -870,7 +879,7 @@ function fillLayers() {
     const row = document.createElement('label');
     row.className = 'layer';
     const c = '#' + displayColor(L.color).getHexString();
-    const name = objName(L.id);
+    const name = layerName(L.id);
     row.title = layerLabel(L.id);
     row.innerHTML = `<input type="checkbox" ${L.visible ? 'checked' : ''}><span class="sw" style="background:${c};color:${c}"></span>
       <span class="nm"><b>${esc(L.id)}</b>${name ? ` <span class="ln">${esc(name)}</span>` : ''}</span><span class="cnt">${L.lines.length ? `${L.lines.length} ${t('lay.lines')} · ` : ''}${L.nPts} ${t('lay.pts')}</span>`;

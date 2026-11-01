@@ -133,3 +133,6 @@ export function namedPattern(name) {
   scaled.set(name, res);
   return res;
 }
+
+/** Малюнок типу лінії шару з Layer.DAT за назвою шару (напр. ACHSEN), або null. */
+export const layerPattern = (layer) => namedPattern(layerType.get(String(layer).toUpperCase()));
