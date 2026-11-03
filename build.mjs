@@ -1,7 +1,9 @@
 // Збирає src/ в один автономний файл dist/CPZ-Viewer.html (працює офлайн, подвійним кліком)
 // і копіює public/ (іконки, маніфест) поруч — для сайту на GitHub Pages.
 import * as esbuild from 'esbuild';
-import { readFile, writeFile, mkdir, cp } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, cp, readdir } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const watch = process.argv.includes('--watch');
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
@@ -40,7 +42,18 @@ async function emit(result) {
     logLevel: 'warning',
   });
   await cp('node_modules/@mlightcad/libredwg-web/wasm/libredwg-web.wasm', 'dist/dwg/libredwg-web.wasm');
-  console.log(`dist/CPZ-Viewer.html (${(js.length / 1024).toFixed(0)} KB JS) + public/ + dwg/`);
+  // Сайт: index.html — та сама сторінка; sw.js — офлайн-кеш усіх файлів сайту з хешами вмісту
+  await cp('dist/CPZ-Viewer.html', 'dist/index.html');
+  const files = {};
+  for (const f of (await readdir('dist', { recursive: true, withFileTypes: true }))) {
+    if (!f.isFile()) continue;
+    const path = relative('dist', join(f.parentPath ?? f.path, f.name)).replaceAll('\\', '/');
+    if (path === 'sw.js' || path === 'CPZ-Viewer.html') continue;
+    files[path] = createHash('sha1').update(await readFile(join('dist', path))).digest('hex').slice(0, 12);
+  }
+  const sw = (await readFile('src/sw.js', 'utf8')).replace('self.__FILES__', () => JSON.stringify(files, null, 2));
+  await writeFile('dist/sw.js', sw);
+  console.log(`dist/CPZ-Viewer.html (${(js.length / 1024).toFixed(0)} KB JS) + public/ + dwg/ + sw.js (${Object.keys(files).length} файлів)`);
 }
 
 const options = {

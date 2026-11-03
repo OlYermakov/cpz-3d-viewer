@@ -1236,3 +1236,9 @@ loop();
 
 // Для автоматизованої перевірки / вбудовування: відкрити файл із масиву байтів.
 window.cpzViewer = { open: (name, bytes) => openInputs([{ name, data: bytes }]), state, controls, get camera() { return camera; } };
+
+// Офлайн-режим (сайт): service worker зберігає застосунок і модуль DWG на пристрої після першого
+// відкриття з інтернетом. З локального файлу (file://) не потрібен — там усе вже в одному HTML.
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}

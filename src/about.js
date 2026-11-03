@@ -17,7 +17,7 @@ export default {
   <li><b>.CPZ</b> — проєкт CAPLAN (архів із файлами .CP і .L): точки, лінії, шари з кольорами.</li>
   <li><b>.CP + .L / .KOR</b> — ті самі файли окремо (виберіть їх разом).</li>
   <li><b>.DXF</b> (ASCII) — лінії, 2D/3D-полілінії, точки, дуги й кола, тексти, блоки з атрибутами, 3D-грані (DGM). Кирилиця й умлаути підтримуються.</li>
-  <li><b>.DWG</b> — ті самі об'єкти, що й у DXF. Відкривається лише на сайті; під час першого відкриття завантажується модуль читання (≈ 10 МБ). Спеціальні об'єкти (Civil 3D тощо) не відображаються.</li>
+  <li><b>.DWG</b> — ті самі об'єкти, що й у DXF. Відкривається на сайті (не з локального HTML-файлу); модуль читання (≈ 10 МБ) зберігається на пристрої разом із застосунком. Спеціальні об'єкти (Civil 3D тощо) не відображаються.</li>
 </ul>
 
 <h3>Відкриття файлу</h3>
@@ -75,6 +75,7 @@ ${keys([
   <li>У меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою (для роботи потрібен інтернет).</li>
 </ul>
 
+<p><b>Без інтернету.</b> Після першого відкриття сайту застосунок (разом із модулем DWG) зберігається на пристрої й далі працює без інтернету — і в браузері, і з ярлика на головному екрані. Нова версія завантажується у фоні, коли є інтернет, і вмикається з наступним запуском.</p>
 <p class="foot">Мова інтерфейсу — перемикач UA · DE · EN угорі панелі.<br>Ліцензія: GNU GPL v3<br>Читання DWG: LibreDWG (GNU GPL v3). Каталог Objektart — не під GPL.</p>`,
   },
 
@@ -92,7 +93,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
   <li><b>.CPZ</b> — CAPLAN-Projekt (Archiv mit .CP und .L): Punkte, Linien, Ebenen mit Farben.</li>
   <li><b>.CP + .L / .KOR</b> — dieselben Dateien einzeln (gemeinsam auswählen).</li>
   <li><b>.DXF</b> (ASCII) — Linien, 2D/3D-Polylinien, Punkte, Bögen und Kreise, Texte, Blöcke mit Attributen, 3D-Flächen (DGM). Umlaute und Kyrillisch werden unterstützt.</li>
-  <li><b>.DWG</b> — dieselben Objekte wie bei DXF. Nur auf der Website; beim ersten Öffnen wird das Lesemodul (≈ 10 MB) geladen. Spezialobjekte (Civil 3D u. Ä.) werden nicht dargestellt.</li>
+  <li><b>.DWG</b> — dieselben Objekte wie bei DXF. Über die Website (nicht aus der lokalen HTML-Datei); das Lesemodul (≈ 10 MB) wird zusammen mit der App auf dem Gerät gespeichert. Spezialobjekte (Civil 3D u. Ä.) werden nicht dargestellt.</li>
 </ul>
 
 <h3>Datei öffnen</h3>
@@ -150,6 +151,7 @@ ${keys([
   <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol (Internetverbindung erforderlich).</li>
 </ul>
 
+<p><b>Ohne Internet.</b> Nach dem ersten Öffnen der Website wird die App (samt DWG-Modul) auf dem Gerät gespeichert und funktioniert danach ohne Internet — im Browser und über das Symbol auf dem Home-Bildschirm. Neue Versionen werden bei Internetverbindung im Hintergrund geladen und beim nächsten Start aktiv.</p>
 <p class="foot">Sprache der Oberfläche — Umschalter UA · DE · EN oben im Bereich.<br>Lizenz: GNU GPL v3<br>DWG-Lesen: LibreDWG (GNU GPL v3). Objektartenkatalog — nicht unter GPL.</p>`,
   },
 
@@ -167,7 +169,7 @@ Files are processed only on your device and are never uploaded.</p>
   <li><b>.CPZ</b> — CAPLAN project (archive with .CP and .L): points, lines, layers with colors.</li>
   <li><b>.CP + .L / .KOR</b> — the same files separately (select them together).</li>
   <li><b>.DXF</b> (ASCII) — lines, 2D/3D polylines, points, arcs and circles, texts, blocks with attributes, 3D faces (DTM). Umlauts and Cyrillic are supported.</li>
-  <li><b>.DWG</b> — the same objects as DXF. Works only on the website; the reader module (≈ 10 MB) is loaded the first time. Special objects (Civil 3D etc.) are not shown.</li>
+  <li><b>.DWG</b> — the same objects as DXF. Works via the website (not from the local HTML file); the reader module (≈ 10 MB) is stored on the device together with the app. Special objects (Civil 3D etc.) are not shown.</li>
 </ul>
 
 <h3>Opening a file</h3>
@@ -225,6 +227,7 @@ ${keys([
   <li>Choose “Add to Home screen” in the browser menu — the app gets its own icon (an internet connection is required).</li>
 </ul>
 
+<p><b>Offline.</b> After the first visit the app (including the DWG module) is stored on the device and then works without internet — in the browser and from the home-screen icon. New versions are downloaded in the background when online and take effect on the next launch.</p>
 <p class="foot">Interface language — the UA · DE · EN switch at the top of the panel.<br>License: GNU GPL v3<br>DWG reading: LibreDWG (GNU GPL v3). Objektart catalog — not under GPL.</p>`,
   },
 };
