@@ -1317,7 +1317,7 @@ function screenshot() {
   c.width = renderer.domElement.width; c.height = renderer.domElement.height;
   const g = c.getContext('2d');
   // Фон сцени прозорий — підкладаємо фон, як у вікні (темна тема — градієнт, світла — суцільний)
-  let bg = '#c3d0d8'; // як тло сцени світлої теми (src/index.html)
+  let bg = '#f4f9fb';
   if (state.theme === 'dark') {
     bg = g.createRadialGradient(c.width * 0.7, 0, 0, c.width * 0.7, 0, Math.max(c.width, c.height));
     bg.addColorStop(0, '#0b3550');
