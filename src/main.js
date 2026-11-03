@@ -26,7 +26,7 @@ const layerLabel = (id) => { const n = layerName(id); return n ? `${id} · ${n}`
 
 const state = {
   model: null,
-  showLines: true, showPoints: true, showLabels: false, showHeights: false, showTexts: true, showLtypes: true,
+  showLines: true, showPoints: true, showLabels: false, showCodes: false, showHeights: false, showTexts: true, showLtypes: true,
   showGrid: true, show2D: true, showDrop: false,
   colorMode: 'layer', zScale: 1, lineWidth: 2, pointSize: 6,
   theme: 'dark', ortho: false, measure: false,
@@ -657,12 +657,14 @@ function drawOverlay() {
     }
   }
 
-  if ((state.showLabels || state.showHeights) && screenPts.length < 5000) {
+  if ((state.showLabels || state.showCodes || state.showHeights) && screenPts.length < 5000) {
     ctx.font = '11px "Segoe UI", system-ui, sans-serif';
     const sorted = [...screenPts].sort((a, b) => a.z - b.z);
     for (const s of sorted) {
       const parts = [];
       if (state.showLabels && s.p.name) parts.push(s.p.name);
+      // Код точки — Objektart (у DXF/DWG — шар)
+      if (state.showCodes && s.p.layer != null) parts.push(`[${s.p.layer}]`);
       if (state.showHeights) parts.push(s.p.noZ ? '—' : s.p.z.toFixed(2));
       if (!parts.length) continue;
       const text = parts.join('  ');
@@ -1124,6 +1126,7 @@ const bindCheck = (id, key, rebuild) => $(id).addEventListener('change', (e) => 
 bindCheck('optLines', 'showLines', 'scene');
 bindCheck('optPoints', 'showPoints', 'scene');
 bindCheck('optLabels', 'showLabels');
+bindCheck('optCodes', 'showCodes');
 bindCheck('optHeights', 'showHeights');
 bindCheck('optTexts', 'showTexts');
 bindCheck('optLtypes', 'showLtypes', 'scene');
@@ -1160,6 +1163,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'O') { setOrtho(!state.ortho); showToast(t(state.ortho ? 'toast.orthoOn' : 'toast.orthoOff')); }
   else if (k === 'M') setMeasure(!state.measure);
   else if (k === 'N') toggleCheck('optLabels');
+  else if (k === 'C') toggleCheck('optCodes');
   else if (k === 'H') toggleCheck('optHeights');
   else if (k === 'Escape') { if (state.measure) setMeasure(false); state.selected = null; updateInfo(); updateStatus(); requestRender(); }
   else return;

@@ -52,7 +52,7 @@ export default {
   <li><b>Лінії, Точки, Тексти, Сітка</b> — показ відповідних елементів.</li>
   <li><b>Осі</b> — якщо в CPZ є файл осей (.A), видно ділянки осей біля креслення з підписами станцій (шар «Achsen»).</li>
   <li><b>Типи ліній</b> — у CPZ за налаштуваннями CAPLAN (паркан, осі, межі покриття тощо; малюнок у масштабі 1:500), у DXF — штрихові й штрихпунктирні; об'єкти DXF мають власні кольори, як у кресленні.</li>
-  <li><b>Назви точок, Висоти</b> — підписи біля точок, без накладання одне на одне.</li>
+  <li><b>Назви точок, Коди точок, Висоти</b> — підписи біля точок, без накладання одне на одне; код (Objektart) — у квадратних дужках, напр. [73].</li>
   <li><b>2D-об'єкти</b> — об'єкти без висоти (H = 0) розміщуються на рівні найнижчої точки.</li>
   <li><b>Проєкції</b> — вертикальні лінії від точок до сітки.</li>
   <li><b>Колір</b> — за шаром або за висотою; <b>Z ×</b> — перебільшення висот; товщина ліній і розмір точок.</li>
@@ -65,14 +65,15 @@ ${keys([
   [['T 1', 'зверху'], ['M', 'вимірювання']],
   [['2', 'спереду'], ['N', 'назви точок']],
   [['3', 'збоку'], ['H', 'висоти']],
-  [['4', '3D-вигляд'], ['Esc', 'скинути / закрити']],
+  [['4', '3D-вигляд'], ['C', 'коди точок']],
+  [['Esc', 'скинути / закрити']],
 ])}
 
 <h3>На телефоні</h3>
 <ul>
   <li>Інструменти — на нижній панелі: <b>Вид</b> (Зверху / Спереду / Збоку / 3D), <b>Вписати</b>, <b>Виміряти</b>, <b>PNG</b>.</li>
   <li>Шари й налаштування — у панелі за кнопкою ☰ або натисканням на назву файлу вгорі.</li>
-  <li>У меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою (для роботи потрібен інтернет).</li>
+  <li>У меню браузера виберіть «Додати на головний екран» — застосунок з'явиться з власною іконкою (після першого відкриття працює й без інтернету).</li>
 </ul>
 
 <p><b>Без інтернету.</b> Після першого відкриття сайту застосунок (разом із модулем DWG) зберігається на пристрої й далі працює без інтернету — і в браузері, і з ярлика на головному екрані. Нова версія завантажується у фоні, коли є інтернет, і вмикається з наступним запуском.</p>
@@ -128,7 +129,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
   <li><b>Linien, Punkte, Texte, Raster</b> — Anzeige der jeweiligen Elemente.</li>
   <li><b>Achsen</b> — enthält die CPZ eine Achsdatei (.A), werden die Achsabschnitte in der Nähe der Zeichnung mit Stationen angezeigt (Ebene „Achsen“).</li>
   <li><b>Linientypen</b> — im CPZ nach den CAPLAN-Einstellungen (Zaun, Achsen, Befestigungsgrenze usw.; Muster im Maßstab 1:500), im DXF Strich- und Strichpunktlinien; DXF-Objekte behalten ihre eigenen Farben wie in der Zeichnung.</li>
-  <li><b>Punktnamen, Höhen</b> — Beschriftung an den Punkten, ohne Überlappung.</li>
+  <li><b>Punktnamen, Punktcodes, Höhen</b> — Beschriftung an den Punkten, ohne Überlappung; der Code (Objektart) steht in eckigen Klammern, z. B. [73].</li>
   <li><b>2D-Objekte</b> — Objekte ohne Höhe (H = 0) werden auf Höhe des tiefsten Punktes dargestellt.</li>
   <li><b>Lote</b> — senkrechte Linien von den Punkten zum Raster.</li>
   <li><b>Farbe</b> — nach Ebene oder nach Höhe; <b>Z ×</b> — Überhöhung; Linienstärke und Punktgröße.</li>
@@ -141,14 +142,15 @@ ${keys([
   [['T 1', 'Draufsicht'], ['M', 'messen']],
   [['2', 'vorne'], ['N', 'Punktnamen']],
   [['3', 'Seite'], ['H', 'Höhen']],
-  [['4', '3D-Ansicht'], ['Esc', 'zurücksetzen / schließen']],
+  [['4', '3D-Ansicht'], ['C', 'Punktcodes']],
+  [['Esc', 'zurücksetzen / schließen']],
 ])}
 
 <h3>Auf dem Smartphone</h3>
 <ul>
   <li>Werkzeuge — in der unteren Leiste: <b>Ansicht</b> (Oben / Vorne / Seite / 3D), <b>Einpassen</b>, <b>Messen</b>, <b>PNG</b>.</li>
   <li>Ebenen und Einstellungen — im Bereich hinter der Schaltfläche ☰ oder durch Tippen auf den Dateinamen oben.</li>
-  <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol (Internetverbindung erforderlich).</li>
+  <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen — die App erscheint mit eigenem Symbol (funktioniert nach dem ersten Öffnen auch ohne Internet).</li>
 </ul>
 
 <p><b>Ohne Internet.</b> Nach dem ersten Öffnen der Website wird die App (samt DWG-Modul) auf dem Gerät gespeichert und funktioniert danach ohne Internet — im Browser und über das Symbol auf dem Home-Bildschirm. Neue Versionen werden bei Internetverbindung im Hintergrund geladen und beim nächsten Start aktiv.</p>
@@ -204,7 +206,7 @@ Files are processed only on your device and are never uploaded.</p>
   <li><b>Lines, Points, Texts, Grid</b> — show the corresponding elements.</li>
   <li><b>Axes</b> — if the CPZ contains an axis file (.A), the axis sections near the drawing are shown with stations (layer “Achsen”).</li>
   <li><b>Linetypes</b> — in CPZ from the CAPLAN settings (fences, axes, pavement edges etc.; pattern at 1:500 scale), in DXF dashed and dash-dot lines; DXF objects keep their own colors as in the drawing.</li>
-  <li><b>Point names, Heights</b> — labels next to points, without overlaps.</li>
+  <li><b>Point names, Point codes, Heights</b> — labels next to points, without overlaps; the code (Objektart) is shown in square brackets, e.g. [73].</li>
   <li><b>2D objects</b> — objects without height (H = 0) are placed at the level of the lowest point.</li>
   <li><b>Drop lines</b> — vertical lines from points down to the grid.</li>
   <li><b>Color</b> — by layer or by height; <b>Z ×</b> — vertical exaggeration; line width and point size.</li>
@@ -217,14 +219,15 @@ ${keys([
   [['T 1', 'top'], ['M', 'measure']],
   [['2', 'front'], ['N', 'point names']],
   [['3', 'side'], ['H', 'heights']],
-  [['4', '3D view'], ['Esc', 'reset / close']],
+  [['4', '3D view'], ['C', 'point codes']],
+  [['Esc', 'reset / close']],
 ])}
 
 <h3>On a phone</h3>
 <ul>
   <li>Tools are in the bottom bar: <b>View</b> (Top / Front / Side / 3D), <b>Fit</b>, <b>Measure</b>, <b>PNG</b>.</li>
   <li>Layers and settings are in the panel behind the ☰ button, or tap the file name at the top.</li>
-  <li>Choose “Add to Home screen” in the browser menu — the app gets its own icon (an internet connection is required).</li>
+  <li>Choose “Add to Home screen” in the browser menu — the app gets its own icon (works offline after the first visit).</li>
 </ul>
 
 <p><b>Offline.</b> After the first visit the app (including the DWG module) is stored on the device and then works without internet — in the browser and from the home-screen icon. New versions are downloaded in the background when online and take effect on the next launch.</p>
