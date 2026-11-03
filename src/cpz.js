@@ -225,7 +225,8 @@ function addAxes(project, axes) {
   if (!project.cp.layers.has(AXES_LAYER)) project.cp.layers.set(AXES_LAYER, { id: AXES_LAYER, color: 0xff00ff, visible: true, width: 1 });
   for (const { ax, pts } of runs) {
     if (pts.length < 2) continue;
-    const vtx = pts.map((p) => ({ name: '', code: null, x: p.x, y: p.y, z: p.z, layer: AXES_LAYER, attrs: [], vertex: true, nopick: true }));
+    // st — станція вершини: для станції й відстані вибраної точки від осі
+    const vtx = pts.map((p) => ({ name: '', code: null, x: p.x, y: p.y, z: p.z, st: p.st, layer: AXES_LAYER, attrs: [], vertex: true, nopick: true }));
     project.lines.push({ name: ax.name, layer: AXES_LAYER, attrs: [], pts: vtx, lt, axis: true });
     // Підписи: назва осі на початку ділянки й станції через «круглий» крок (до ~8 на ділянку)
     const len = pts.at(-1).st - pts[0].st;

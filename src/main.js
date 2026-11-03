@@ -790,6 +790,46 @@ function measure(a, b) {
   return { dE, dN, horiz, dH, slope: has ? Math.hypot(horiz, dH) : horiz, az, gon: az / 0.9, grade: has && horiz > 0 ? dH / horiz * 100 : NaN };
 }
 
+// Положення точки відносно осей (.A): станція основи перпендикуляра, відстань ліворуч/праворуч
+// (за напрямком зростання станцій) і, якщо вісь має градієнту, різниця висот. Для кожної осі —
+// найближча ділянка, де перпендикуляр падає всередину; осі далі ніж 100 м не показуються.
+const AXIS_MAX_DIST = 100;
+function axisRefs(p) {
+  const best = new Map();
+  for (const l of state.model.lines) {
+    if (!l.axis) continue;
+    const P = l.pts;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+      if (!(L2 > 0)) continue;
+      const u = ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2;
+      // Перпендикуляр має падати на ланку (невеликий допуск — щоб не губити точку навпроти вершини)
+      if (u < -1e-6 || u > 1 + 1e-6) continue;
+      const fx = a.x + dx * u, fy = a.y + dy * u, d = Math.hypot(p.x - fx, p.y - fy);
+      if (d > AXIS_MAX_DIST) continue;
+      const prev = best.get(l.name);
+      if (prev && prev.d <= d) continue;
+      const side = dx * (p.y - a.y) - dy * (p.x - a.x); // > 0 — ліворуч від напрямку осі
+      const z = a.z != null && b.z != null ? a.z + (b.z - a.z) * u : null;
+      best.set(l.name, { name: l.name, st: a.st + (b.st - a.st) * u, d, left: side > 0, z });
+    }
+  }
+  return [...best.values()].sort((a, b) => a.d - b.d).slice(0, 3);
+}
+
+// Станція в кілометражі: 40169.934 → «40+169.934»
+const kmFmt = (st) => {
+  const km = Math.floor(st / 1000 + 1e-9);
+  return `${km}+${(st - km * 1000).toFixed(3).padStart(7, '0')}`;
+};
+
+function axisRows(p) {
+  return axisRefs(p).map((r) => {
+    const dz = r.z != null && !p.noZ ? `<br><span class="muted">${t('ax.dh')}:</span> ${(p.z - r.z >= 0 ? '+' : '') + fmt(p.z - r.z)} ${t('m')}` : '';
+    return `<dt>${t('ax.axis')}</dt><dd><b>${esc(r.name)}</b><br>km ${kmFmt(r.st)} · ${fmt(r.d)} ${t('m')} ${t(r.left ? 'ax.left' : 'ax.right')}${dz}</dd>`;
+  }).join('');
+}
+
 function pointRows(p) {
   return `<dt>${t('pt.name')}</dt><dd><b>${esc(ptName(p))}</b></dd>
     <dt>${t('pt.layer')}</dt><dd>${esc(layerLabel(p.layer))}</dd>
@@ -797,7 +837,8 @@ function pointRows(p) {
     <dt>Hochwert (N)</dt><dd>${fmt(p.y, 4)}</dd>
     <dt>Höhe (H)</dt><dd>${p.noZ ? `<span class="muted">${t('pt.noHeight')}</span>` : fmt(p.z, 4)}</dd>
     ${p.code != null ? `<dt>W</dt><dd>${p.code}</dd>` : ''}
-    ${p.attrs?.filter(Boolean).length ? `<dt>${t('pt.attrs')}</dt><dd>${esc(p.attrs.filter(Boolean).join(' | '))}</dd>` : ''}`;
+    ${p.attrs?.filter(Boolean).length ? `<dt>${t('pt.attrs')}</dt><dd>${esc(p.attrs.filter(Boolean).join(' | '))}</dd>` : ''}
+    ${axisRows(p)}`;
 }
 
 // Підказки вимірювання: «клікніть» для миші, «торкніться» для дотику
@@ -841,7 +882,10 @@ function updateStatus() {
   const [a, b] = state.measurePts;
   const u = t('m');
   if (p) {
-    $('status').textContent = `${ptName(p)}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}   ${t('st.layer')} ${layerLabel(p.layer)}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
+    // Найближча вісь (якщо є): станція й відстань — основне, що потрібно на трасі
+    const ax = axisRefs(p)[0];
+    const axTxt = ax ? `   ${ax.name} km ${kmFmt(ax.st)} ${fmt(ax.d)} ${t('m')} ${t(ax.left ? 'ax.left' : 'ax.right')}` : '';
+    $('status').textContent = `${ptName(p)}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}${axTxt}   ${t('st.layer')} ${layerLabel(p.layer)}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
   } else if (state.measure && b) {
     const m = measure(a, b);
     $('status').textContent = `${ptName(a)} → ${ptName(b)}:  ${fmt(m.slope)} ${u}   ${t('m.horizShort')} ${fmt(m.horiz)} ${u}   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} ${u}`;

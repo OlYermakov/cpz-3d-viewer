@@ -50,7 +50,7 @@ export default {
 <h3>Відображення</h3>
 <ul>
   <li><b>Лінії, Точки, Тексти, Сітка</b> — показ відповідних елементів.</li>
-  <li><b>Осі</b> — якщо в CPZ є файл осей (.A), видно ділянки осей біля креслення з підписами станцій (шар «Achsen»).</li>
+  <li><b>Осі</b> — якщо в CPZ є файл осей (.A), видно ділянки осей біля креслення з підписами станцій (шар «Achsen»). Для вибраної точки показуються станція (km 40+169.928) і відстань ліворуч / праворуч від кожної осі в межах 100 м, а для осі з градієнтою — і висота точки над віссю.</li>
   <li><b>Типи ліній</b> — у CPZ за налаштуваннями CAPLAN (паркан, осі, межі покриття тощо; малюнок у масштабі 1:500), у DXF — штрихові й штрихпунктирні; об'єкти DXF мають власні кольори, як у кресленні.</li>
   <li><b>Назви точок, Коди точок, Висоти</b> — підписи біля точок, без накладання одне на одне; код (Objektart) — у квадратних дужках, напр. [73].</li>
   <li><b>2D-об'єкти</b> — об'єкти без висоти (H = 0) розміщуються на рівні найнижчої точки.</li>
@@ -127,7 +127,7 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 <h3>Darstellung</h3>
 <ul>
   <li><b>Linien, Punkte, Texte, Raster</b> — Anzeige der jeweiligen Elemente.</li>
-  <li><b>Achsen</b> — enthält die CPZ eine Achsdatei (.A), werden die Achsabschnitte in der Nähe der Zeichnung mit Stationen angezeigt (Ebene „Achsen“).</li>
+  <li><b>Achsen</b> — enthält die CPZ eine Achsdatei (.A), werden die Achsabschnitte in der Nähe der Zeichnung mit Stationen angezeigt (Ebene „Achsen“). Für den gewählten Punkt werden Station (km 40+169.928) und Abstand links / rechts zu jeder Achse innerhalb von 100 m angezeigt, bei Achsen mit Gradiente auch die Höhe über der Achse.</li>
   <li><b>Linientypen</b> — im CPZ nach den CAPLAN-Einstellungen (Zaun, Achsen, Befestigungsgrenze usw.; Muster im Maßstab 1:500), im DXF Strich- und Strichpunktlinien; DXF-Objekte behalten ihre eigenen Farben wie in der Zeichnung.</li>
   <li><b>Punktnamen, Punktcodes, Höhen</b> — Beschriftung an den Punkten, ohne Überlappung; der Code (Objektart) steht in eckigen Klammern, z. B. [73].</li>
   <li><b>2D-Objekte</b> — Objekte ohne Höhe (H = 0) werden auf Höhe des tiefsten Punktes dargestellt.</li>
@@ -204,7 +204,7 @@ Files are processed only on your device and are never uploaded.</p>
 <h3>Display</h3>
 <ul>
   <li><b>Lines, Points, Texts, Grid</b> — show the corresponding elements.</li>
-  <li><b>Axes</b> — if the CPZ contains an axis file (.A), the axis sections near the drawing are shown with stations (layer “Achsen”).</li>
+  <li><b>Axes</b> — if the CPZ contains an axis file (.A), the axis sections near the drawing are shown with stations (layer “Achsen”). For the selected point, the station (km 40+169.928) and the offset left / right of each axis within 100 m are shown, and for axes with a gradient also the height above the axis.</li>
   <li><b>Linetypes</b> — in CPZ from the CAPLAN settings (fences, axes, pavement edges etc.; pattern at 1:500 scale), in DXF dashed and dash-dot lines; DXF objects keep their own colors as in the drawing.</li>
   <li><b>Point names, Point codes, Heights</b> — labels next to points, without overlaps; the code (Objektart) is shown in square brackets, e.g. [73].</li>
   <li><b>2D objects</b> — objects without height (H = 0) are placed at the level of the lowest point.</li>
