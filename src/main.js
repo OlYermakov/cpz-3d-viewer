@@ -30,7 +30,7 @@ const state = {
   showGrid: true, show2D: true, showDrop: false,
   colorMode: 'layer', zScale: 1, lineWidth: 2, pointSize: 6,
   theme: 'dark', ortho: false, measure: false,
-  hover: null, selected: null, measurePts: [],
+  hover: null, selected: null, measurePts: [], measureClosed: false,
 };
 
 // ---------------------------------------------------------------- Three.js
@@ -687,23 +687,43 @@ function drawOverlay() {
 
   // Вимірювання
   const mp = state.measurePts.map((p) => ({ p, s: glowRing(p, MEASURE, 8) }));
-  if (mp.length === 2 && mp[0].s && mp[1].s) {
-    const [a, b] = mp.map((m) => m.s);
+  if (mp.length >= 2 && mp.every((m) => m.s)) {
+    const closed = state.measureClosed;
+    const pairs = [];
+    for (let i = 1; i < mp.length; i++) pairs.push([mp[i - 1], mp[i]]);
+    if (closed) pairs.push([mp.at(-1), mp[0]]);
     ctx.save();
+    // Замкнений контур — з легкою заливкою
+    if (closed) {
+      ctx.beginPath(); mp.forEach((m, i) => (i ? ctx.lineTo(m.s.x, m.s.y) : ctx.moveTo(m.s.x, m.s.y))); ctx.closePath();
+      ctx.fillStyle = dark ? 'rgba(143,230,255,.12)' : 'rgba(11,143,200,.10)'; ctx.fill();
+    }
     ctx.shadowColor = MEASURE; ctx.shadowBlur = 10;
     ctx.setLineDash([7, 5]);
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.beginPath();
+    for (const [a, b] of pairs) { ctx.moveTo(a.s.x, a.s.y); ctx.lineTo(b.s.x, b.s.y); }
     ctx.lineWidth = 2; ctx.strokeStyle = MEASURE; ctx.stroke();
     ctx.restore();
-    const m = measure(mp[0].p, mp[1].p);
-    const text = `${fmt(m.slope)} ${t('m')}`;
     ctx.font = '600 12px "Segoe UI", system-ui, sans-serif';
-    const tw = ctx.measureText(text).width;
-    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-    pill(mx - tw / 2 - 10, my - 11, tw + 20, 22, dark);
-    ctx.fillStyle = dark ? '#d9f6ff' : '#0b3a52'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, mx, my + 0.5);
-    ctx.textAlign = 'start';
+    const label = (text, x, y) => {
+      const tw = ctx.measureText(text).width;
+      pill(x - tw / 2 - 10, y - 11, tw + 20, 22, dark);
+      ctx.fillStyle = dark ? '#d9f6ff' : '#0b3a52'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, y + 0.5);
+      ctx.textAlign = 'start';
+    };
+    // Довжина кожного відрізка (до 30, щоб не захаращувати); для двох точок — похила, як і раніше
+    if (pairs.length <= 30) {
+      for (const [a, b] of pairs) {
+        const m = measure(a.p, b.p);
+        const one = pairs.length === 1;
+        label(`${fmt(one ? m.slope : m.horiz, one ? 3 : 2)} ${t('m')}`, (a.s.x + b.s.x) / 2, (a.s.y + b.s.y) / 2);
+      }
+    }
+    if (closed) {
+      const cx = mp.reduce((s, m) => s + m.s.x, 0) / mp.length, cy = mp.reduce((s, m) => s + m.s.y, 0) / mp.length;
+      label(`${fmt(polyArea(state.measurePts), 2)} ${t('m2')}`, cx, cy);
+    }
   }
   if (state.selected) glowRing(state.selected, dark ? '#2cc2f2' : '#0a7fc0', 8);
   if (state.hover) glowRing(state.hover, dark ? '#e4f6ff' : '#0b2635', 6);
@@ -830,6 +850,33 @@ function axisRows(p) {
   }).join('');
 }
 
+// Площа многокутника в плані (формула Гаусса), м². Координати — відносно першої точки: добутки
+// повних координат (≈ 3,4·10⁶ × 5,5·10⁶) втрачають точність, і площа малих об'єктів вийшла б неправильною
+function polyArea(pts) {
+  if (pts.length < 3) return 0;
+  const x0 = pts[0].x, y0 = pts[0].y;
+  let s = 0;
+  for (let i = 0, n = pts.length; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    s += (a.x - x0) * (b.y - y0) - (b.x - x0) * (a.y - y0);
+  }
+  return Math.abs(s) / 2;
+}
+
+// Ламана вимірювання: довжини в плані й похилі (3D — лише якщо всі точки мають висоту), площа замкненої
+function chain(pts, closed) {
+  const segs = [];
+  for (let i = 1; i < pts.length; i++) segs.push(measure(pts[i - 1], pts[i]));
+  if (closed) segs.push(measure(pts.at(-1), pts[0]));
+  const has = pts.every((p) => !p.noZ);
+  return {
+    segs,
+    horiz: segs.reduce((s, m) => s + m.horiz, 0),
+    slope: has ? segs.reduce((s, m) => s + m.slope, 0) : NaN,
+    area: closed ? polyArea(pts) : NaN,
+  };
+}
+
 function pointRows(p) {
   return `<dt>${t('pt.name')}</dt><dd><b>${esc(ptName(p))}</b></dd>
     <dt>${t('pt.layer')}</dt><dd>${esc(layerLabel(p.layer))}</dd>
@@ -850,9 +897,27 @@ function updateInfo() {
   if (state.measure) {
     sec.hidden = false;
     $('infoTitle').textContent = t('sec.measure');
-    const [a, b] = state.measurePts;
+    const P = state.measurePts, closed = state.measureClosed;
+    const [a, b] = P;
     if (!a) { info.innerHTML = `<div class="muted">${act('m.first')}</div>`; return; }
     if (!b) { info.innerHTML = `<div>A: <b>${esc(ptName(a))}</b></div><div class="muted">${act('m.second')}</div>`; return; }
+    const tools = `<div class="mtools"><button class="mini" id="mUndo">${t('m.undo')}</button><button class="mini" id="mNew">${t('m.new')}</button></div>`;
+    const hint = closed ? '' : `<div class="muted" style="margin-top:6px">${act(P.length >= 3 ? 'm.nextClose' : 'm.next')}</div>`;
+    // Ламана з 3+ точок або замкнена: підсумки; деталі — останнього відрізка
+    if (P.length > 2 || closed) {
+      const c = chain(P, closed);
+      const last = closed ? measure(P.at(-1), P[0]) : measure(P.at(-2), P.at(-1));
+      info.innerHTML = `<div style="margin-bottom:6px">${P.map((p) => `<b>${esc(ptName(p))}</b>`).join(' → ')}${closed ? ` → <b>${esc(ptName(P[0]))}</b>` : ''}</div>
+        <div class="res">${closed ? `${fmt(c.area, 2)} ${t('m2')}` : `${fmt(c.horiz)} ${u}`}</div>
+        <dl class="kv" style="margin-top:6px">
+          <dt>${t('m.segs')}</dt><dd>${c.segs.length}</dd>
+          <dt>${t(closed ? 'm.perim' : 'm.total')}</dt><dd>${fmt(c.horiz)} ${u} (${t('line.plan')})${Number.isNaN(c.slope) ? '' : ` · ${fmt(c.slope)} ${u} (3D)`}</dd>
+          ${closed ? `<dt>${t('m.area')}</dt><dd>${fmt(c.area, 2)} ${t('m2')} (${t('line.plan')})</dd>` : ''}
+          <dt>${t('m.lastSeg')}</dt><dd>${fmt(last.horiz)} ${u} · ΔH ${Number.isNaN(last.dH) ? '—' : (last.dH >= 0 ? '+' : '') + fmt(last.dH)} ${u}</dd>
+        </dl>${hint}${tools}`;
+      bindMeasureTools();
+      return;
+    }
     const m = measure(a, b);
     info.innerHTML = `<div style="margin-bottom:6px"><b>${esc(ptName(a))}</b> → <b>${esc(ptName(b))}</b></div>
       <div class="res">${fmt(m.slope)} ${u}</div>
@@ -863,7 +928,8 @@ function updateInfo() {
         <dt>${t('m.grade')}</dt><dd>${Number.isNaN(m.grade) ? '—' : fmt(m.grade, 2) + ' %'}</dd>
         <dt>ΔE / ΔN</dt><dd>${fmt(m.dE)} / ${fmt(m.dN)}</dd>
         <dt>${t('m.az')}</dt><dd>${fmt(m.az, 4)}° · ${fmt(m.gon, 4)} gon</dd>
-      </dl>`;
+      </dl>${hint}${tools}`;
+    bindMeasureTools();
     return;
   }
   const p = state.selected;
@@ -871,7 +937,7 @@ function updateInfo() {
   sec.hidden = false;
   $('infoTitle').textContent = t('sec.point');
   const lines = p.lines.map((l) => `<div style="margin-top:6px"><b>${esc(l.name)}</b> <span class="muted">(${l.pts.length} ${t('line.pts')}${l.closed ? ', ' + t('line.closed') : ''}${l.is2D ? ', 2D' : ''})</span><br>
-      <span class="muted">${t('line.length')}:</span> ${fmt(l.len2D)} ${u} (${t('line.plan')})${Number.isNaN(l.len3D) ? '' : ` · ${fmt(l.len3D)} ${u} (3D)`}</div>`).join('');
+      <span class="muted">${t('line.length')}:</span> ${fmt(l.len2D)} ${u} (${t('line.plan')})${Number.isNaN(l.len3D) ? '' : ` · ${fmt(l.len3D)} ${u} (3D)`}${l.closed ? `<br><span class="muted">${t('m.area')}:</span> ${fmt(polyArea(l.pts), 2)} ${t('m2')} (${t('line.plan')})` : ''}</div>`).join('');
   info.innerHTML = `<dl class="kv">${pointRows(p)}</dl>${lines ? `<div style="margin-top:4px" class="muted">${t('line.lines')}</div>${lines}` : ''}`;
 }
 
@@ -879,13 +945,16 @@ function updateInfo() {
 // (на телефоні наведення немає, тож це основне місце для координат).
 function updateStatus() {
   const p = state.hover ?? (state.measure ? null : state.selected);
-  const [a, b] = state.measurePts;
+  const P = state.measurePts, [a, b] = P;
   const u = t('m');
   if (p) {
     // Найближча вісь (якщо є): станція й відстань — основне, що потрібно на трасі
     const ax = axisRefs(p)[0];
     const axTxt = ax ? `   ${ax.name} km ${kmFmt(ax.st)} ${fmt(ax.d)} ${t('m')} ${t(ax.left ? 'ax.left' : 'ax.right')}` : '';
     $('status').textContent = `${ptName(p)}   E ${fmt(p.x, 4)}   N ${fmt(p.y, 4)}   H ${p.noZ ? '—' : fmt(p.z, 4)}${axTxt}   ${t('st.layer')} ${layerLabel(p.layer)}${p.lines.length ? `   ${t('st.line')} ` + p.lines.map((l) => l.name).join(', ') : ''}`;
+  } else if (state.measure && (P.length > 2 || state.measureClosed)) {
+    const c = chain(P, state.measureClosed);
+    $('status').textContent = `${t('m.segs')} ${c.segs.length}:  ${fmt(c.horiz)} ${u}${state.measureClosed ? `   ${t('m.area')} ${fmt(c.area, 2)} ${t('m2')}` : ''}`;
   } else if (state.measure && b) {
     const m = measure(a, b);
     $('status').textContent = `${ptName(a)} → ${ptName(b)}:  ${fmt(m.slope)} ${u}   ${t('m.horizShort')} ${fmt(m.horiz)} ${u}   ΔH ${Number.isNaN(m.dH) ? '—' : fmt(m.dH)} ${u}`;
@@ -959,7 +1028,7 @@ async function openInputs(inputs) {
     const project = await loadProject(inputs);
     if (isDwg) hideToast();
     state.model = buildModel(project);
-    state.selected = null; state.measurePts = []; state.hover = null;
+    state.selected = null; state.measurePts = []; state.measureClosed = false; state.hover = null;
     viewport.classList.add('loaded');
     for (const id of ['secFile', 'secLayers', 'secView']) $(id).hidden = false;
     document.title = `${state.model.name} — CPZ 3D Viewer`;
@@ -1043,11 +1112,18 @@ canvas.addEventListener('pointerup', (e) => {
   if (!downPos || downPos.b !== 0 || Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 4) { downPos = null; return; }
   downPos = null;
   const r = canvas.getBoundingClientRect();
-  const p = pickAt(e.clientX - r.left, e.clientY - r.top, e.pointerType === 'touch' ? 26 : 12);
+  const x = e.clientX - r.left, y = e.clientY - r.top, radius = e.pointerType === 'touch' ? 26 : 12;
+  const p = pickAt(x, y, radius);
   if (state.measure) {
-    if (!p) return;
-    if (state.measurePts.length >= 2) state.measurePts = [];
-    state.measurePts.push(p);
+    // Після замкнення наступний клік починає нове вимірювання
+    if (state.measureClosed) { state.measurePts = []; state.measureClosed = false; }
+    const P = state.measurePts;
+    // Клік біля першої точки (від 3 точок) замикає контур — площа й периметр. За положенням
+    // на екрані, а не за вибраною точкою: поруч може лежати інша точка з тими самими координатами
+    const first = P.length >= 3 ? project(P[0]) : null;
+    if (first && Math.hypot(first.x - x, first.y - y) <= radius) state.measureClosed = true;
+    else if (!p) return;
+    else if (p !== P.at(-1)) P.push(p);
   } else {
     if (p && p !== state.selected) showToast(`${t('toast.pivot')} ${ptName(p)}`);
     state.selected = p;
@@ -1069,9 +1145,18 @@ canvas.addEventListener('pointermove', (e) => {
 });
 canvas.addEventListener('pointerleave', () => { if (state.hover) { state.hover = null; updateStatus(); requestRender(); } });
 
+// Кнопки під результатом вимірювання: прибрати останню точку / почати знову
+function bindMeasureTools() {
+  $('mUndo').onclick = () => {
+    if (state.measureClosed) state.measureClosed = false; else state.measurePts.pop();
+    updateInfo(); updateStatus(); requestRender();
+  };
+  $('mNew').onclick = () => { state.measurePts = []; state.measureClosed = false; updateInfo(); updateStatus(); requestRender(); };
+}
+
 function setMeasure(on) {
   state.measure = on;
-  state.measurePts = [];
+  state.measurePts = []; state.measureClosed = false;
   for (const id of ['btnMeasure', 'mMeasure']) $(id).classList.toggle('on', on);
   updateInfo(); updateStatus(); requestRender();
 }

@@ -127,7 +127,7 @@ function arcVertices(a, b, r, flag) {
   let sweep = Math.atan2(b.y - cy, b.x - cx) - a0;
   if (cw) while (sweep >= 0) sweep -= 2 * Math.PI; // за годинниковою: кут зменшується
   else while (sweep <= 0) sweep += 2 * Math.PI;
-  const n = Math.max(2, Math.ceil((Math.abs(sweep) / (2 * Math.PI)) * 48));
+  const n = Math.max(2, Math.ceil((Math.abs(sweep) / (2 * Math.PI)) * 128));
   const out = [];
   for (let i = 1; i < n; i++) {
     const t = i / n, ang = a0 + sweep * t;

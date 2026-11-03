@@ -38,7 +38,8 @@ export default {
 <ul>
   <li>Клік (дотик) на точці показує назву, координати Rechtswert / Hochwert / Höhe, шар і лінії з довжиною в плані та 3D. На телефоні координати — у рядку внизу екрана.</li>
   <li>Поки точку вибрано, модель обертається навколо неї. Клік у порожнє місце або <kbd>Esc</kbd> знімає вибір.</li>
-  <li>«Виміряти»: клікніть дві точки — похила й горизонтальна відстань, перевищення ΔH, ухил і дирекційний кут (° та gon). У DXF можна прив'язуватися до вершин ліній.</li>
+  <li>«Виміряти»: клікніть дві точки — похила й горизонтальна відстань, перевищення ΔH, ухил і дирекційний кут (° та gon). Далі можна клікати наступні точки — ламана із загальною довжиною; клік по першій точці замикає контур і показує площу та периметр. «↶ Прибрати точку» скасовує останню. У DXF можна прив'язуватися до вершин ліній.</li>
+  <li>Для замкненої лінії креслення в інформації про точку видно її площу в плані.</li>
 </ul>
 
 <h3>Шари (Objektart)</h3>
@@ -115,7 +116,8 @@ Dateien werden nur auf Ihrem Gerät verarbeitet und nirgendwohin gesendet.</p>
 <ul>
   <li>Klick (Tippen) auf einen Punkt zeigt Name, Rechtswert / Hochwert / Höhe, Ebene und Linien mit Länge im Grundriss und in 3D. Auf dem Smartphone stehen die Koordinaten in der Leiste unten.</li>
   <li>Solange ein Punkt ausgewählt ist, dreht sich das Modell um diesen Punkt. Klick ins Leere oder <kbd>Esc</kbd> hebt die Auswahl auf.</li>
-  <li>„Messen“: zwei Punkte anklicken — Schräg- und Horizontalstrecke, Höhenunterschied ΔH, Neigung und Richtungswinkel (° und gon). In DXF kann an Linien-Stützpunkte gefangen werden.</li>
+  <li>„Messen“: zwei Punkte anklicken — Schräg- und Horizontalstrecke, Höhenunterschied ΔH, Neigung und Richtungswinkel (° und gon). Weitere Punkte ergeben einen Polygonzug mit Gesamtlänge; ein Klick auf den ersten Punkt schließt die Fläche und zeigt Fläche und Umfang. „↶ Punkt entfernen“ nimmt den letzten zurück. In DXF kann an Linien-Stützpunkte gefangen werden.</li>
+  <li>Bei geschlossenen Linien der Zeichnung wird in der Punktinformation die Fläche im Grundriss angezeigt.</li>
 </ul>
 
 <h3>Ebenen (Objektart)</h3>
@@ -192,7 +194,8 @@ Files are processed only on your device and are never uploaded.</p>
 <ul>
   <li>Click (tap) a point to see its name, Rechtswert / Hochwert / Höhe coordinates, layer and lines with plan and 3D length. On a phone the coordinates appear in the bar at the bottom.</li>
   <li>While a point is selected, the model orbits around it. Click an empty spot or press <kbd>Esc</kbd> to clear the selection.</li>
-  <li>“Measure”: click two points — slope and horizontal distance, height difference ΔH, grade and bearing (° and gon). In DXF you can snap to line vertices.</li>
+  <li>“Measure”: click two points — slope and horizontal distance, height difference ΔH, grade and bearing (° and gon). Further points form a polyline with total length; clicking the first point closes the polygon and shows area and perimeter. “↶ Remove point” undoes the last one. In DXF you can snap to line vertices.</li>
+  <li>For closed lines of the drawing, the point details show the plan area.</li>
 </ul>
 
 <h3>Layers (Objektart)</h3>
