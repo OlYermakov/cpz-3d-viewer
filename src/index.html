@@ -115,7 +115,9 @@
   #viewport { position: relative; flex: 1; overflow: hidden; border-radius: 22px; border: 1px solid var(--edge);
     background: radial-gradient(120% 90% at 70% 0%, rgba(30, 140, 200, .16), transparent 60%), rgba(0, 8, 12, .35);
     box-shadow: inset 0 0 80px rgba(0, 0, 0, .45); }
-  :root[data-theme="light"] #viewport { background: #f4f9fb; box-shadow: inset 0 0 60px rgba(20, 90, 130, .08); }
+  /* Сцена світлої теми — світле сіро-блакитне тло, а не майже біле: на ньому видно й яскраві шари
+     CAPLAN (салатовий, бірюзовий, жовтий), кольори яких не змінюються */
+  :root[data-theme="light"] #viewport { background: #c3d0d8; box-shadow: inset 0 0 60px rgba(20, 90, 130, .10); }
   #viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   #overlay { pointer-events: none; }
 
