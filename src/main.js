@@ -114,11 +114,17 @@ function applyTheme() {
 }
 
 // Колір шару, скоригований під фон (чорний шар CAPLAN на темному фоні — світло-сірий, і навпаки).
+// У світлій темі яскраві кольори (жовтий, бірюзовий, салатовий) затемнюються зі збереженням
+// відтінку до яскравості, що дає контраст ≈ 3:1 зі світлим тлом; білий і світло-сірий — темно-сині.
+const LIGHT_MAX_LUM = 0.25; // відносна яскравість (лінійні компоненти THREE.Color)
 function displayColor(rgb) {
   const c = new THREE.Color(rgb);
   const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   if (state.theme === 'dark' && lum < 0.18) return new THREE.Color(0xd4eef8);
-  if (state.theme === 'light' && lum > 0.8) return new THREE.Color(0x163444);
+  if (state.theme === 'light' && lum > LIGHT_MAX_LUM) {
+    if (Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b) < 0.08) return new THREE.Color(0x163444);
+    return c.multiplyScalar(LIGHT_MAX_LUM / lum);
+  }
   return c;
 }
 
