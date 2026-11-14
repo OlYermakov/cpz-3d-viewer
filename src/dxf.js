@@ -157,7 +157,7 @@ export function parseDXF(text) {
 
 /** Секції записів DXF ({ HEADER, TABLES, BLOCKS, ENTITIES }) → модель; так само для DWG (src/dwg-worker.js). */
 export function parseSections(S) {
-  if (!S.ENTITIES) throw new Error(t('e.noData'));
+  if (!S.ENTITIES) throw new Error(t('e.noDrawing'));
 
   // Глобальний масштаб типів ліній ($LTSCALE)
   const hdr = S.HEADER ?? [];
@@ -438,6 +438,6 @@ export function parseSections(S) {
   }
 
   walk(S.ENTITIES, IDENTITY, null, 1, 0);
-  if (!out.points.length && !out.lines.length && !out.texts.length) throw new Error(t('e.noData'));
+  if (!out.points.length && !out.lines.length && !out.texts.length) throw new Error(t('e.noDrawing'));
   return { cp: { layers }, ...out };
 }

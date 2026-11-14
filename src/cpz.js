@@ -164,7 +164,7 @@ export function parseL(text) {
         layer,
         attrs: attrs.slice(1),
       };
-      if (cur && arc) cur.pts.push(...arcVertices(cur.pts[cur.pts.length - 1], p, arc.r, arc.flag));
+      if (cur && arc) for (const v of arcVertices(cur.pts[cur.pts.length - 1], p, arc.r, arc.flag)) cur.pts.push(v);
       arc = null;
       (cur ? cur.pts : out.points).push(p);
     } else {
@@ -296,15 +296,19 @@ export async function loadProject(inputs) {
       continue;
     }
     if (x === 'cp') {
-      project.cp = parseCP(text);
+      // Шари, вже додані з DXF/DWG, зберігаються (якщо .CP іде у списку файлів після креслення)
+      const cp = parseCP(text);
+      for (const [k, v] of project.cp?.layers ?? []) if (!cp.layers.has(k)) cp.layers.set(k, v);
+      project.cp = cp;
       project.name ??= e.name.replace(/\.[^.]+$/, '');
       continue;
     }
     const d = parseL(text);
     if (!d.points.length && !d.lines.length) continue;
-    project.header.push(...d.header);
-    project.points.push(...d.points);
-    project.lines.push(...d.lines);
+    // Без push(...масив): у великих .L сотні тисяч точок — це переповнює стек аргументів
+    project.header = project.header.concat(d.header);
+    project.points = project.points.concat(d.points);
+    project.lines = project.lines.concat(d.lines);
     project.sources.push(e.name);
     project.name ??= e.name.replace(/\.[^.]+$/, '');
   }
