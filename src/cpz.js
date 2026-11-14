@@ -296,7 +296,10 @@ export async function loadProject(inputs) {
       continue;
     }
     if (x === 'cp') {
-      project.cp = parseCP(text);
+      // Шари DXF/DWG, прочитані раніше з того ж архіву, не губляться — доповнюють шари .CP
+      const cp = parseCP(text);
+      for (const [k, v] of project.cp?.layers ?? []) if (!cp.layers.has(k)) cp.layers.set(k, v);
+      project.cp = cp;
       project.name ??= e.name.replace(/\.[^.]+$/, '');
       continue;
     }

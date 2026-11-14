@@ -203,7 +203,14 @@ function buildModel(project) {
     name: project.name, header: project.header, sources: project.sources, format: project.format,
     layers, layerList, lines: project.lines, points: project.points, texts,
     origin, minX, maxX, minY, maxY, minZ, maxZ, zRange: maxZ - minZ, hasRealZ, fit,
-    nPoints: project.points.length + project.lines.reduce((s, l) => s + l.pts.filter((p) => !p.nopick).length, 0),
+    // Унікальні точки (точка, спільна для кількох ліній або повторена для замкнення, — одна);
+    // проміжні вершини дуг не рахуються. Те саме число — у панелі «Файл» і в рядку стану
+    nPoints: (() => {
+      const keys = new Set();
+      for (const p of project.points) keys.add(`${p.name}|${p.x}|${p.y}|${p.z}`);
+      for (const l of project.lines) for (const p of l.pts) if (!p.nopick) keys.add(`${p.name}|${p.x}|${p.y}|${p.z}`);
+      return keys.size;
+    })(),
     // Прив'язка до вершин ліній — лише для креслень до SNAP_LIMIT вершин: інакше індекс і проєкція
     // мільйонів вершин щокадру забирають гігабайти пам'яті й гальмують обертання
     snapVertices: project.lines.reduce((s, l) => s + l.pts.length, 0) <= SNAP_LIMIT,
@@ -936,7 +943,7 @@ function updateInfo() {
   if (!p) { sec.hidden = true; return; }
   sec.hidden = false;
   $('infoTitle').textContent = t('sec.point');
-  const lines = p.lines.map((l) => `<div style="margin-top:6px"><b>${esc(l.name)}</b> <span class="muted">(${l.pts.length} ${t('line.pts')}${l.closed ? ', ' + t('line.closed') : ''}${l.is2D ? ', 2D' : ''})</span><br>
+  const lines = p.lines.map((l) => `<div style="margin-top:6px"><b>${esc(l.name)}</b> <span class="muted">(${l.pts.filter((q) => !q.nopick).length} ${t('line.pts')}${l.closed ? ', ' + t('line.closed') : ''}${l.is2D ? ', 2D' : ''})</span><br>
       <span class="muted">${t('line.length')}:</span> ${fmt(l.len2D)} ${u} (${t('line.plan')})${Number.isNaN(l.len3D) ? '' : ` · ${fmt(l.len3D)} ${u} (3D)`}${l.closed ? `<br><span class="muted">${t('m.area')}:</span> ${fmt(polyArea(l.pts), 2)} ${t('m2')} (${t('line.plan')})` : ''}</div>`).join('');
   info.innerHTML = `<dl class="kv">${pointRows(p)}</dl>${lines ? `<div style="margin-top:4px" class="muted">${t('line.lines')}</div>${lines}` : ''}`;
 }
@@ -962,7 +969,7 @@ function updateStatus() {
     $('status').textContent = a ? `A: ${ptName(a)} — ${act('m.second')}` : act('m.two');
   } else if (state.model) {
     // На телефоні назва файлу вже є у верхній панелі
-    const base = `${isNarrow() ? '' : `${state.model.name}  ·  `}${pickPts.length} ${t('st.points')}  ·  ${state.model.lines.length} ${t('st.lines')}`;
+    const base = `${isNarrow() ? '' : `${state.model.name}  ·  `}${state.model.nPoints} ${t('st.points')}  ·  ${state.model.lines.length} ${t('st.lines')}`;
     $('status').textContent = `${base}  ·  ${t(isTouch ? 'st.tap' : 'st.mouse')}`;
   }
 }

@@ -1,7 +1,8 @@
 {
   "name": "CPZ 3D Viewer",
   "short_name": "CPZ 3D",
-  "description": "3D-переглядач креслень CAPLAN (CPZ) та DXF",
+  "description": "3D-Viewer für CAPLAN-Zeichnungen (CPZ), DXF und DWG",
+  "lang": "de",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
